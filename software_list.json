@@ -2,92 +2,110 @@
   {
     "Id": "AnyDesk.AnyDesk",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "anydesk"
   },
   {
     "Id": "Minustek.WinDirStat",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "windirstat"
   },
   {
     "Id": "CrystalDewWorld.CrystalDiskInfo",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "crystaldiskinfo"
   },
   {
     "Id": "Google.Chrome",
     "Source": "winget",
-    "Locale": "pt-BR"
+    "Locale": "pt-BR",
+    "ChocoId": "googlechrome"
   },
   {
     "Id": "Mozilla.Firefox",
     "Source": "winget",
-    "Locale": "pt-BR"
+    "Locale": "pt-BR",
+    "ChocoId": "firefox"
   },
   {
     "Id": "Mozilla.Thunderbird.pt-BR",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "thunderbird"
   },
   {
     "Id": "ONLYOFFICE.DesktopEditors",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "onlyoffice"
   },
   {
     "Id": "Adobe.Acrobat.Reader.64-bit",
     "Source": "winget",
-    "Locale": "pt-BR"
+    "Locale": "pt-BR",
+    "ChocoId": "adobezeroreader"
   },
   {
     "Id": "Microsoft.Teams",
     "Source": "winget",
-    "Locale": "pt-BR"
+    "Locale": "pt-BR",
+    "ChocoId": "microsoft-teams.install"
   },
   {
     "Id": "MicroSIP.MicroSIP",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "microsip"
   },
   {
     "Id": "RaMMicHaeL.Unchecky",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "unchecky"
   },
   {
     "Id": "voidtools.Everything",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "everything"
   },
   {
     "Id": "MartiCliment.UniGetUI",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "wingetui"
   },
   {
     "Id": "7zip.7zip",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "7zip"
   },
   {
     "Id": "VideoLAN.VLC",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "vlc"
   },
   {
     "Id": "Flameshot.Flameshot",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "flameshot"
   },
   {
     "Id": "Microsoft.VCRedist.2015+.x64",
     "Source": "winget",
-    "Locale": null
+    "Locale": null,
+    "ChocoId": "vcredist140"
   },
   {
     "Id": "9NKSQGP7F2NH",
     "Source": "msstore",
     "Locale": null,
-    "Comment": "WhatsApp"
+    "Comment": "WhatsApp",
+    "ChocoId": "whatsapp"
   }
 ]
