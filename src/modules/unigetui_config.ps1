@@ -20,38 +20,45 @@ function Configure-UniGetUI {
             if ($jsonContent) {
                 $settings = $jsonContent | ConvertFrom-Json -AsHashtable
             }
-        } catch {
-            Write-Warning "Falha ao ler settings.json existente. Criando novo."
-        }
-    }
-
-    # Remove arquivo que desabilita updates (se existir)
-    $disableFile = "$configDir\DisableAutoCheckforUpdates"
-    if (Test-Path $disableFile) {
-        Remove-Item $disableFile -Force
-        Write-Host "-> Removido arquivo DisableAutoCheckforUpdates." -ForegroundColor DarkGray
-    }
-
-    # Definir preferencias (Tentativa com chaves conhecidas e variantes)
-    # DoCacheAdminRights: Pede UAC apenas uma vez por sessao
-    # UpdatesInStartup: Busca updates ao iniciar
-    $settings["DoCacheAdminRights"] = $true
-    $settings["UpdatesInStartup"] = $true
+    Write-Log "CONFIGURACAO UNIGETUI" -Type Info -Color Cyan
     
-    # Tenta forcar atualizacao automatica de pacotes (Varias chaves possiveis)
-    $settings["DoAutoUpdatePackages"] = $true 
-    $settings["AutomaticUpdates"] = $true
-    $settings["EnableAutoUpdate"] = $true
-    $settings["UpdatePackagesAutomatically"] = $true
-
-    # Garante que nao esteja desabilitado
-    if ($settings.ContainsKey("DisableAutoCheckforUpdates")) { $settings["DisableAutoCheckforUpdates"] = $false }
+    $settingsPath = "$env:LOCALAPPDATA\UniGetUI\settings.json"
+    
+    if (!(Test-Path $settingsPath)) {
+        Write-Log "Arquivo settings.json do UniGetUI nao encontrado em $settingsPath" -Type Warning
+        Write-Log "O UniGetUI pode nao ter sido aberto ainda ou nao foi instalado." -Type Warning
+        Register-Failure "UniGetUI Config" "settings.json nao encontrado."
+        return
+    }
 
     try {
-        $settings | ConvertTo-Json -Depth 5 | Set-Content $configFile -Encoding UTF8
-        Write-Host "-> Configuracao aplicada com sucesso." -ForegroundColor Green
-        Write-Host "-> [NOTA] Verifique nas configuracoes da UniGetUI se 'Atualizar pacotes automaticamente' esta ativo." -ForegroundColor Yellow
+        $jsonContent = Get-Content $settingsPath -Raw
+        $settings = $jsonContent | ConvertFrom-Json
+        
+        # Definir preferencias
+        $settings | Add-Member -Name "DoCacheAdminRights" -Value $true -MemberType NoteProperty -Force
+        $settings | Add-Member -Name "UpdatesInStartup" -Value $true -MemberType NoteProperty -Force
+        
+        # Tenta forcar atualizacao automatica de pacotes (Varias chaves possiveis)
+        $settings | Add-Member -Name "DoAutoUpdatePackages" -Value $true -MemberType NoteProperty -Force
+        $settings | Add-Member -Name "AutomaticUpdates" -Value $true -MemberType NoteProperty -Force
+        $settings | Add-Member -Name "EnableAutoUpdate" -Value $true -MemberType NoteProperty -Force
+        $settings | Add-Member -Name "UpdatePackagesAutomatically" -Value $true -MemberType NoteProperty -Force
+
+        $settings | ConvertTo-Json -Depth 10 | Set-Content $settingsPath
+        Write-Log "Configuracoes aplicadas ao UniGetUI." -Type Success
+
+        # Remove arquivo que desativa updates, se existir
+        $disableUpdateFile = "$env:LOCALAPPDATA\UniGetUI\DisableAutoCheckforUpdates"
+        if (Test-Path $disableUpdateFile) {
+            Remove-Item $disableUpdateFile -Force -ErrorAction SilentlyContinue
+            Write-Log "Arquivo 'DisableAutoCheckforUpdates' removido." -Type Info
+        }
+        
+        Write-Log "NOTA: Verifique nas configuracoes do UniGetUI se 'Atualizar pacotes automaticamente' esta marcado." -Type Info -Color Yellow
+
     } catch {
-        Write-Host "-> Erro ao salvar configuracao: $_" -ForegroundColor Red
+        Write-Log "Erro ao processar JSON do UniGetUI: $_" -Type Error
+        Register-Failure "UniGetUI Config" "Erro ao editar settings.json: $_"
     }
 }
