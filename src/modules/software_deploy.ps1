@@ -13,38 +13,29 @@ function Install-CorporateSoftware {
         Write-Warning "Nao foi possivel atualizar as fontes do Winget. Tentando instalar com cache atual..."
     }
 
-    # --- LISTA DE PACOTES (EDITE AQUI) ---
-    $packages = @(
-        # Diagnostico/Acesso
-        [PSCustomObject]@{Id = "AnyDesk.AnyDesk";                 Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "WinDirStat.WinDirStat";           Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "CrystalDewWorld.CrystalDiskInfo"; Source = "winget"; Locale = $null},
+    # --- LISTA DE PACOTES (CARREGADA DE JSON) ---
+    $jsonPath = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "software_list.json"
+    $packages = @()
 
-        # Navegadores / Email
-        [PSCustomObject]@{Id = "Google.Chrome";                 Source = "winget"; Locale = "pt-BR"},
-        [PSCustomObject]@{Id = "Mozilla.Firefox";               Source = "winget"; Locale = "pt-BR"},
-        [PSCustomObject]@{Id = "Mozilla.Thunderbird.pt-BR";     Source = "winget"; Locale = $null},
+    if (Test-Path $jsonPath) {
+        try {
+            # Le o JSON e converte para objetos
+            $packages = Get-Content $jsonPath -Raw | ConvertFrom-Json
+            Write-Host "Lista de softwares carregada de $jsonPath" -ForegroundColor Cyan
+        } catch {
+            Write-Warning "Falha ao ler software_list.json (Softfail). Erro: $_"
+            Write-Warning "Nenhum software sera instalado nesta etapa."
+        }
+    } else {
+        Write-Warning "Arquivo software_list.json nao encontrado em $jsonPath (Softfail)."
+        Write-Warning "Nenhum software sera instalado nesta etapa."
+    }
 
-        # Produtividade
-        [PSCustomObject]@{Id = "ONLYOFFICE.DesktopEditors";     Source = "winget"; Locale = $null}, 
-        [PSCustomObject]@{Id = "Adobe.Acrobat.Reader.64-bit";   Source = "winget"; Locale = "pt-BR"},
-        [PSCustomObject]@{Id = "Microsoft.Teams";               Source = "winget"; Locale = "pt-BR"},
-        [PSCustomObject]@{Id = "MicroSIP.MicroSIP";             Source = "winget"; Locale = $null}, 
-
-        # Ferramentas Tecnicas
-        [PSCustomObject]@{Id = "RaMMicHaeL.Unchecky";           Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "voidtools.Everything";          Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "MartiCliment.UniGetUI";         Source = "winget"; Locale = $null},
-        
-        # Utilitarios
-        [PSCustomObject]@{Id = "7zip.7zip";                     Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "VideoLAN.VLC";                  Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "Flameshot.Flameshot";           Source = "winget"; Locale = $null},
-        [PSCustomObject]@{Id = "Microsoft.VCRedist.2015+.x64";  Source = "winget"; Locale = $null},
-
-        # Store Only
-        [PSCustomObject]@{Id = "9NKSQGP7F2NH";                  Source = "msstore"; Locale = $null} # WhatsApp
-    )
+    # Se a lista estiver vazia, encerra a funcao sem erro
+    if ($packages.Count -eq 0) {
+        Write-Host "Nenhum pacote para instalar." -ForegroundColor DarkGray
+        return
+    }
 
     $globalArgs = @(
         "--accept-package-agreements",
