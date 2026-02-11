@@ -14,7 +14,7 @@ function Install-GlpiAgent {
 
     # Fallback/Defaults
     if ([string]::IsNullOrWhiteSpace($glpiServer)) { 
-        $glpiServer = "http://glpi.d.digitalsat.com.br/front/inventory.php" 
+        $glpiServer = "http://glpi.yourcompany.com/front/inventory.php" 
         Write-Warning "GLPI_SERVER nao encontrado em credentials.txt. Usando padrao."
     }
     if ([string]::IsNullOrWhiteSpace($glpiUser)) { $glpiUser = "teste" }
