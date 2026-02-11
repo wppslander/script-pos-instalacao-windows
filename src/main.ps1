@@ -4,7 +4,7 @@
 
 $ErrorActionPreference = "Stop"
 $ScriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
-$host.UI.RawUI.WindowTitle = "Instalador Unificado - Digital Sat"
+$host.UI.RawUI.WindowTitle = "Instalador Unificado - Windows Post-Install"
 
 # Load Modules
 try {

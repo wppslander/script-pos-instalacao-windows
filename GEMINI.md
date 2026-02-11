@@ -1,6 +1,6 @@
-# Digital Sat Post-Installation Suite
+# Windows Post-Installation Suite
 
-**Project Purpose**: This repository contains a modular, automated, and maintainable script suite designed for post-installation configuration of Windows 11 workstations at Digital Sat. It combines administrative privilege management, system tweaks, GLPI Agent deployment, and bulk software installation via `winget`.
+**Project Purpose**: This repository contains a modular, automated, and maintainable script suite designed for post-installation configuration of Windows 11 workstations. It combines administrative privilege management, system tweaks, GLPI Agent deployment, and bulk software installation via `winget`.
 
 ---
 
@@ -12,8 +12,8 @@
 4.  **Confirm** the User Account Control (UAC) prompt to allow Administrator privileges.
 5.  **Follow the on-screen prompts**:
     -   The script will verify internet connectivity automatically.
-    -   Enter the **FILIAL** (e.g., MATRIZ).
-    -   Enter the **SANKHYA USER** (e.g., joao.silva).
+    -   Enter the **FILIAL** (Branch) (e.g., HEADQUARTERS).
+    -   Enter the **USER** (e.g., john.doe).
     -   Confirm the generated TAG.
 6.  **Wait** for the installation to complete. The script will install the GLPI Agent, a standard list of corporate software, and configure UniGetUI.
 
@@ -44,9 +44,9 @@ The project is organized into a modular structure to facilitate maintenance and 
 ### GLPI Configuration (`credentials.txt`)
 The `credentials.txt` file allows changing the server URL without modifying the code:
 ```ini
-GLPI_SERVER=http://glpi.d.digitalsat.com.br/front/inventory.php
-GLPI_USER=teste
-GLPI_PASSWORD=teste
+GLPI_SERVER=http://glpi.yourcompany.com/front/inventory.php
+GLPI_USER=glpi_user
+GLPI_PASSWORD=glpi_password
 ```
 
 ### Adding or Removing Software
