@@ -1,0 +1,93 @@
+[
+  {
+    "Id": "AnyDesk.AnyDesk",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "Minustek.WinDirStat",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "CrystalDewWorld.CrystalDiskInfo",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "Google.Chrome",
+    "Source": "winget",
+    "Locale": "pt-BR"
+  },
+  {
+    "Id": "Mozilla.Firefox",
+    "Source": "winget",
+    "Locale": "pt-BR"
+  },
+  {
+    "Id": "Mozilla.Thunderbird.pt-BR",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "ONLYOFFICE.DesktopEditors",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "Adobe.Acrobat.Reader.64-bit",
+    "Source": "winget",
+    "Locale": "pt-BR"
+  },
+  {
+    "Id": "Microsoft.Teams",
+    "Source": "winget",
+    "Locale": "pt-BR"
+  },
+  {
+    "Id": "MicroSIP.MicroSIP",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "RaMMicHaeL.Unchecky",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "voidtools.Everything",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "MartiCliment.UniGetUI",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "7zip.7zip",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "VideoLAN.VLC",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "Flameshot.Flameshot",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "Microsoft.VCRedist.2015+.x64",
+    "Source": "winget",
+    "Locale": null
+  },
+  {
+    "Id": "9NKSQGP7F2NH",
+    "Source": "msstore",
+    "Locale": null,
+    "Comment": "WhatsApp"
+  }
+]
