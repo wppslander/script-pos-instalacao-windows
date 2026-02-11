@@ -3,8 +3,8 @@
 # ==========================================
 
 function Install-GlpiAgent {
-    Write-Header "CONFIGURACAO GLPI AGENT"
-
+    Write-Log "CONFIGURACAO GLPI AGENT" -Type Info -Color Cyan
+    
     # Carregar Credenciais
     $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "credentials.txt"
     
@@ -15,26 +15,27 @@ function Install-GlpiAgent {
     # Fallback/Defaults
     if ([string]::IsNullOrWhiteSpace($glpiServer)) { 
         $glpiServer = "http://glpi.yourcompany.com/front/inventory.php" 
-        Write-Warning "GLPI_SERVER nao encontrado em credentials.txt. Usando padrao."
+        Write-Log "GLPI_SERVER nao encontrado em credentials.txt. Usando padrao." -Type Warning
     }
     if ([string]::IsNullOrWhiteSpace($glpiUser)) { $glpiUser = "teste" }
     if ([string]::IsNullOrWhiteSpace($glpiPass)) { $glpiPass = "teste" }
 
-    Write-Host "Servidor GLPI: $glpiServer" -ForegroundColor DarkGray
+    Write-Log "Servidor GLPI: $glpiServer" -Type Info -Color DarkGray
 
     # 0. Verificacao de Conectividade (Fail Fast / Softfail)
-    Write-Host "Verificando alcance do servidor GLPI..." -ForegroundColor DarkGray
+    Write-Log "Verificando alcance do servidor GLPI..." -Type Info -Color DarkGray
     try {
         $request = Invoke-WebRequest -Uri $glpiServer -Method Head -TimeoutSec 5 -ErrorAction Stop
         if ($request.StatusCode -eq 200) {
-            Write-Host "-> Servidor GLPI acessivel." -ForegroundColor Green
+            Write-Log "-> Servidor GLPI acessivel." -Type Success
         }
     } catch {
-        Write-Warning "Falha ao contactar servidor GLPI ($glpiServer)."
-        Write-Warning "Erro: $_"
+        Write-Log "Falha ao contactar servidor GLPI ($glpiServer). Erro: $_" -Type Warning
+        Register-Failure "GLPI Check" "Servidor inalcançavel ou erro de rede."
+        
         $choice = Read-Host "Deseja tentar a instalacao mesmo assim? (S/N)"
         if ($choice -notmatch "s|S") {
-            Write-Warning "Instalacao do GLPI abortada pelo usuario (Softfail)."
+            Write-Log "Instalacao do GLPI abortada pelo usuario (Softfail)." -Type Warning
             return
         }
     }
@@ -52,12 +53,12 @@ function Install-GlpiAgent {
     } while ([string]::IsNullOrWhiteSpace($filial) -or [string]::IsNullOrWhiteSpace($user))
 
     $finalTag = "$filial-$user"
-    Write-Host "`nTAG LIMPA: $finalTag" -ForegroundColor Cyan
+    Write-Log "TAG LIMPA: $finalTag" -Type Info -Color Cyan
     
     $null = Read-Host "Pressione ENTER para confirmar e instalar via Winget"
 
     # 2. Instalar via Winget
-    Write-Host "Instalando GLPI Agent via Winget... (Aguarde)" -ForegroundColor Yellow
+    Write-Log "Instalando GLPI Agent via Winget... (Aguarde)" -Type Info -Color Yellow
     
     # Definir parametros do MSI para passar via --override
     # Nota: --override substitui todos os args padrao, entao precisamos incluir /quiet /norestart
@@ -81,29 +82,36 @@ function Install-GlpiAgent {
     )
 
     try {
-        Write-Host "Executando: winget $(($wingetArgs -join ' ') -replace 'PASSWORD=.*? ', 'PASSWORD=*** ')" -ForegroundColor DarkGray
+        Write-Log "Executando: winget $(($wingetArgs -join ' ') -replace 'PASSWORD=.*? ', 'PASSWORD=*** ')" -Type Info -Color DarkGray
         
         & winget $wingetArgs
 
         if ($LASTEXITCODE -eq 0) {
-             Write-Host "[SUCESSO] GLPI Instalado." -ForegroundColor Green
+             Write-Log "[SUCESSO] GLPI Instalado." -Type Success
         } else {
-             Write-Host "[ERRO] Winget retornou erro: $LASTEXITCODE" -ForegroundColor Red
+             Write-Log "[ERRO] Winget retornou erro: $LASTEXITCODE" -Type Error
+             Register-Failure "GLPI Install" "Winget falhou com codigo $LASTEXITCODE"
         }
     } catch {
-        Write-Host "[ERRO] Falha ao executar winget: $_" -ForegroundColor Red
+        Write-Log "[ERRO] Falha ao executar winget: $_" -Type Error
+        Register-Failure "GLPI Install" "Excecao ao rodar Winget: $_"
     }
 
     # 3. Pos-Instalacao (Inventory Force)
-    Write-Host "Aguardando servico iniciar..."
+    Write-Log "Aguardando servico iniciar..." -Type Info
     Start-Sleep -Seconds 5
     
     $agentBin = "C:\Program Files\GLPI-Agent\glpi-agent.bat"
     if (Test-Path $agentBin) {
-        Write-Host "Forcando inventario..." -ForegroundColor Yellow
-        Start-Process -FilePath $agentBin -ArgumentList "--force" -Wait
-        Write-Host "Inventario enviado." -ForegroundColor Green
+        Write-Log "Forcando inventario..." -Type Info -Color Yellow
+        try {
+            Start-Process -FilePath $agentBin -ArgumentList "--force" -Wait
+            Write-Log "Inventario enviado." -Type Success
+        } catch {
+            Write-Log "Erro ao executar inventario manual: $_" -Type Warning
+            Register-Failure "GLPI Inventory" "Falha ao rodar glpi-agent.bat --force"
+        }
     } else {
-        Write-Warning "Script do agente nao encontrado. O servico enviara os dados automaticamente."
+        Write-Log "Script do agente nao encontrado ($agentBin). O servico enviara os dados automaticamente." -Type Warning
     }
 }
