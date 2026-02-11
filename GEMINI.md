@@ -27,13 +27,14 @@ The project is organized into a modular structure to facilitate maintenance and 
 / (Root)
 ├── bootstrap.bat             # Entry point. Handles elevation and launches PowerShell.
 ├── credentials.txt           # Configuration file (GLPI Server, User, Password).
+├── software_list.json        # List of applications to install (JSON format).
 ├── GEMINI.md                 # Project documentation.
 ├── src/
     ├── main.ps1              # Main orchestrator script.
     └── modules/
         ├── sys_utils.ps1     # System utilities (Internet Check, Credentials, SSL Fix).
         ├── glpi_installer.ps1 # Logic for installing and configuring GLPI Agent.
-        ├── software_deploy.ps1 # List of software packages and installation logic.
+        ├── software_deploy.ps1 # Software deployment logic.
         └── unigetui_config.ps1 # Post-install configuration for UniGetUI.
 ```
 
