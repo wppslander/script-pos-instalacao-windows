@@ -1,5 +1,11 @@
 [
   {
+    "Id": "Chocolatey.Chocolatey",
+    "Source": "winget",
+    "Locale": null,
+    "ChocoId": "chocolatey"
+  },
+  {
     "Id": "AnyDesk.AnyDesk",
     "Source": "winget",
     "Locale": null,
