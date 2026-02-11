@@ -22,6 +22,23 @@ function Install-GlpiAgent {
 
     Write-Host "Servidor GLPI: $glpiServer" -ForegroundColor DarkGray
 
+    # 0. Verificacao de Conectividade (Fail Fast / Softfail)
+    Write-Host "Verificando alcance do servidor GLPI..." -ForegroundColor DarkGray
+    try {
+        $request = Invoke-WebRequest -Uri $glpiServer -Method Head -TimeoutSec 5 -ErrorAction Stop
+        if ($request.StatusCode -eq 200) {
+            Write-Host "-> Servidor GLPI acessivel." -ForegroundColor Green
+        }
+    } catch {
+        Write-Warning "Falha ao contactar servidor GLPI ($glpiServer)."
+        Write-Warning "Erro: $_"
+        $choice = Read-Host "Deseja tentar a instalacao mesmo assim? (S/N)"
+        if ($choice -notmatch "s|S") {
+            Write-Warning "Instalacao do GLPI abortada pelo usuario (Softfail)."
+            return
+        }
+    }
+
     # 1. Input (Mantido)
     do {
         Write-Host "`n--- DADOS DO EQUIPAMENTO ---" -ForegroundColor Yellow
@@ -54,7 +71,7 @@ function Install-GlpiAgent {
     $overrideStr = "/quiet /norestart $glpiArgs"
 
     $wingetArgs = @(
-        "install", "--id", "GLPI-Project.GLPIAgent",
+        "install", "--id", "GLPI-Project.GLPI-Agent",
         "--source", "winget",
         "--exact",
         "--accept-package-agreements",
