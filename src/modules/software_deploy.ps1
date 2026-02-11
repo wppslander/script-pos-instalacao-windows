@@ -2,10 +2,34 @@
 # MODULE: Software Deploy (Winget)
 # ==========================================
 
+function Install-ChocolateyEngine {
+    if (Get-Command "choco" -ErrorAction SilentlyContinue) {
+        return $true
+    }
+
+    Write-Host "-> Chocolatey nao encontrado. Instalando..." -ForegroundColor Yellow
+    try {
+        Set-ExecutionPolicy Bypass -Scope Process -Force; 
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
+        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
+        
+        # Recarrega variaveis de ambiente para usar o 'choco' imediatamente
+        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+        
+        if (Get-Command "choco" -ErrorAction SilentlyContinue) {
+            Write-Host "-> Chocolatey instalado com sucesso." -ForegroundColor Green
+            return $true
+        }
+    } catch {
+        Write-Warning "Falha ao instalar Chocolatey: $_"
+    }
+    return $false
+}
+
 function Install-CorporateSoftware {
     Write-Header "DEPLOY DE SOFTWARES CORPORATIVOS"
 
-    # Atualiza as fontes do Winget (Corrige falhas de 'Pacote nao encontrado' no MS Store)
+    # Atualiza as fontes do Winget
     Write-Host "Atualizando catalogos do Winget..." -ForegroundColor DarkGray
     try {
         $null = & winget source update --disable-interactivity 2>&1
@@ -19,7 +43,6 @@ function Install-CorporateSoftware {
 
     if (Test-Path $jsonPath) {
         try {
-            # Le o JSON e converte para objetos
             $packages = Get-Content $jsonPath -Raw | ConvertFrom-Json
             Write-Host "Lista de softwares carregada de $jsonPath" -ForegroundColor Cyan
         } catch {
@@ -31,7 +54,6 @@ function Install-CorporateSoftware {
         Write-Warning "Nenhum software sera instalado nesta etapa."
     }
 
-    # Se a lista estiver vazia, encerra a funcao sem erro
     if ($packages.Count -eq 0) {
         Write-Host "Nenhum pacote para instalar." -ForegroundColor DarkGray
         return
@@ -61,7 +83,7 @@ function Install-CorporateSoftware {
             Write-Host "-> OK (Instalado)" -ForegroundColor Gray
             $success++
         } else {
-            Write-Host "-> Instalando..." -ForegroundColor Green
+            Write-Host "-> Instalando via Winget..." -ForegroundColor Green
             
             $cmdArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
             
@@ -74,23 +96,43 @@ function Install-CorporateSoftware {
                 & winget $cmdArgs
                 
                 if ($LASTEXITCODE -eq 0) {
-                    Write-Host "-> Sucesso." -ForegroundColor Green
+                    Write-Host "-> Sucesso (Winget)." -ForegroundColor Green
                     $success++
                 } else {
+                    $wingetFailed = $true
+                    
+                    # Tenta fallback PT-BR se aplicavel
                     if ($pkg.Locale) {
-                        Write-Host "-> Erro com PT-BR. Tentando padrao..." -ForegroundColor DarkYellow
+                        Write-Host "-> Erro com locale. Tentando padrao..." -ForegroundColor DarkYellow
                         $fallbackArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
                         & winget $fallbackArgs
-                        
                         if ($LASTEXITCODE -eq 0) {
-                            Write-Host "-> Sucesso (Fallback)." -ForegroundColor Green
+                            Write-Host "-> Sucesso (Winget Fallback)." -ForegroundColor Green
                             $success++
-                        } else {
-                            Write-Host "-> FALHA (Erro: $LASTEXITCODE)" -ForegroundColor Red
-                            $fail++
+                            $wingetFailed = $false
                         }
-                    } else {
-                        Write-Host "-> FALHA (Erro: $LASTEXITCODE)" -ForegroundColor Red
+                    }
+
+                    # FALLBACK CHOCOLATEY
+                    if ($wingetFailed -and $pkg.ChocoId) {
+                        Write-Host "-> Falha no Winget ($LASTEXITCODE). Tentando Chocolatey: $($pkg.ChocoId)..." -ForegroundColor Magenta
+                        
+                        if (Install-ChocolateyEngine) {
+                            try {
+                                & choco install $pkg.ChocoId -y --no-progress
+                                if ($LASTEXITCODE -eq 0) {
+                                    Write-Host "-> Sucesso (Chocolatey)." -ForegroundColor Green
+                                    $success++
+                                    $wingetFailed = $false
+                                } else {
+                                    Write-Warning "-> Falha tambem no Chocolatey."
+                                }
+                            } catch {
+                                Write-Warning "-> Erro ao executar Chocolatey."
+                            }
+                        }
+                    } elseif ($wingetFailed) {
+                        Write-Host "-> FALHA (Erro: $LASTEXITCODE) e sem fallback configurado." -ForegroundColor Red
                         $fail++
                     }
                 }
