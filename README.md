@@ -15,7 +15,25 @@
     -   Digite a **FILIAL** (ex: MATRIZ).
     -   Digite o **USUÁRIO** (ex: joao.silva).
     -   Confirme a TAG gerada.
-6.  **Aguarde** a conclusão da instalação. O script instalará o Agente GLPI, a lista padrão de softwares corporativos e configurará o UniGetUI.
+6.  **Aguarde** a conclusão da instalação. O script instalará a lista padrão de softwares corporativos (incluindo o Agente GLPI) e realizará a configuração final.
+
+---
+
+## 🔄 Fluxo de Execução
+
+```mermaid
+graph TD
+    A[bootstrap.bat] -->|Elevação UAC| B(main.ps1)
+    B --> C{Internet OK?}
+    C -- Sim --> D[Prep Sistema: SSL Bypass]
+    C -- Não --> X[Aviso de Conexão]
+    D --> E[Instalação de Softwares via Winget/Choco]
+    E --> F[Configuração do Agente GLPI]
+    F --> G[Input: Filial e Usuário]
+    G --> H[Aplicação de Registro HKLM]
+    H --> I[Forçar Inventário Manual]
+    I --> J[Resumo Final]
+```
 
 ---
 
@@ -27,13 +45,13 @@ O projeto está organizado em uma estrutura modular para facilitar a manutençã
 / (Raiz)
 ├── bootstrap.bat             # Ponto de entrada. Gerencia elevação e inicia o PowerShell.
 ├── credentials.txt           # Arquivo de configuração (Servidor GLPI, Usuário, Senha).
+├── software_list.json        # Lista de pacotes para instalação (Winget/MSStore).
 ├── src/
     ├── main.ps1              # Script orquestrador principal.
     └── modules/
         ├── sys_utils.ps1     # Utilitários (Internet Check, Fix SSL, Leitura de Credenciais).
-        ├── glpi_installer.ps1 # Instalação do Agente GLPI via Winget.
-        ├── software_deploy.ps1 # Instalação de Softwares (Winget).
-        └── unigetui_config.ps1 # Configuração pós-install do UniGetUI.
+        ├── glpi_installer.ps1 # Configuração e Registro do Agente GLPI.
+        └── software_deploy.ps1 # Motor de instalação de softwares (Winget com fallback Choco).
 ```
 
 ---
@@ -50,8 +68,8 @@ GLPI_PASSWORD=glpi_password
 
 ### Adicionando ou Removendo Softwares
 Para modificar a lista de aplicativos instalados:
-1.  Abra `src/modules/software_deploy.ps1`.
-2.  Edite o array `$packages` adicionando ou removendo linhas.
+1.  Abra `software_list.json`.
+2.  Adicione ou remova objetos JSON seguindo o padrão (Id, Source, ChocoId).
 
 ---
 
@@ -59,7 +77,7 @@ Para modificar a lista de aplicativos instalados:
 
 -   **Sem Internet**: O script avisa no início se não houver conexão com o Google DNS (8.8.8.8).
 -   **WhatsApp Falhando**: O script executa `winget source update` automaticamente para corrigir erros de catálogo da MS Store.
--   **Configuração do UniGetUI**: As configurações (UAC único, Auto-Update) são aplicadas em `%LOCALAPPDATA%\UniGetUI\settings.json`.
+-   **Fallback**: Se um pacote falhar no Winget e possuir um `ChocoId` no JSON, o script tentará instalá-lo via Chocolatey.
 
 ---
 
