@@ -16,6 +16,7 @@ try {
 
     . "$ScriptPath\modules\glpi_installer.ps1"
     . "$ScriptPath\modules\software_deploy.ps1"
+    . "$ScriptPath\modules\sys_debloat.ps1"
 } catch {
     Write-Host "ERRO FATAL: Falha ao carregar modulos em $ScriptPath\modules" -ForegroundColor Red
     Write-Host $_
@@ -40,6 +41,13 @@ try {
     Enable-StoreSSLBypass
 } catch {
     Register-Failure "System Prep" "Falha no SSL Bypass: $_"
+}
+
+# 1.1 Privacy & Debloat
+try {
+    Disable-Telemetry
+} catch {
+    Register-Failure "Debloat" "Falha na otimizacao de privacidade: $_"
 }
 
 # 2. Deploy Software
