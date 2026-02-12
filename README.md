@@ -27,7 +27,8 @@ graph TD
     B --> C{Internet OK?}
     C -- Sim --> D[Prep Sistema: SSL Bypass]
     C -- Não --> X[Aviso de Conexão]
-    D --> E[Instalação de Softwares via Winget/Choco]
+    D --> D1[Debloat & Privacidade]
+    D1 --> E[Instalação de Softwares via Winget/Choco]
     E --> F[Configuração do Agente GLPI]
     F --> G[Input: Filial e Usuário]
     G --> H[Aplicação de Registro HKLM]
@@ -50,6 +51,7 @@ O projeto está organizado em uma estrutura modular para facilitar a manutençã
     ├── main.ps1              # Script orquestrador principal.
     └── modules/
         ├── sys_utils.ps1     # Utilitários (Internet Check, Fix SSL, Leitura de Credenciais).
+        ├── sys_debloat.ps1   # Otimização de privacidade e desativação de telemetria.
         ├── glpi_installer.ps1 # Configuração e Registro do Agente GLPI.
         └── software_deploy.ps1 # Motor de instalação de softwares (Winget com fallback Choco).
 ```
