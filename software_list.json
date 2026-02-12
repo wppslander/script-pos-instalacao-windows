@@ -113,5 +113,11 @@
     "Locale": null,
     "Comment": "WhatsApp",
     "ChocoId": "whatsapp"
+  },
+  {
+    "Id": "GLPI-Project.GLPI-Agent",
+    "Source": "winget",
+    "Locale": null,
+    "ChocoId": "glpi-agent"
   }
 ]

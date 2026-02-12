@@ -67,5 +67,5 @@ To modify the list of installed applications:
 ---
 
 **Version**: 1.2.0 (Modular + Config File)
-**Author**: Gemini CLI Agent
+**Author**: Daniel Wppslander and Gemini CLI Agent
 **Date**: 2026-02-11
