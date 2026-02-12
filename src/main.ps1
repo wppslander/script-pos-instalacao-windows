@@ -16,7 +16,6 @@ try {
 
     . "$ScriptPath\modules\glpi_installer.ps1"
     . "$ScriptPath\modules\software_deploy.ps1"
-    . "$ScriptPath\modules\unigetui_config.ps1"
 } catch {
     Write-Host "ERRO FATAL: Falha ao carregar modulos em $ScriptPath\modules" -ForegroundColor Red
     Write-Host $_
@@ -43,28 +42,21 @@ try {
     Register-Failure "System Prep" "Falha no SSL Bypass: $_"
 }
 
-# 2. Install GLPI
-try {
-    Install-GlpiAgent
-} catch {
-    Register-Failure "GLPI Installer" "Erro inesperado: $_"
-}
-
-# 3. Deploy Software
+# 2. Deploy Software
 try {
     Install-CorporateSoftware
 } catch {
     Register-Failure "Software Deploy" "Erro inesperado: $_"
 }
 
-# 4. Configure UniGetUI
+# 3. Configure GLPI
 try {
-    Configure-UniGetUI
+    Configure-GlpiAgent
 } catch {
-    Register-Failure "UniGetUI Config" "Erro inesperado: $_"
+    Register-Failure "GLPI Config" "Erro inesperado: $_"
 }
 
-# 5. Finish
+# 4. Finish
 Show-ExecutionSummary
 
 Write-Host "Pressione qualquer tecla para sair..." -ForegroundColor DarkGray
