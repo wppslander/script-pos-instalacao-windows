@@ -70,3 +70,60 @@ function Disable-Telemetry {
         Write-Log "-> Falha ao desativar Cortana: $_" -Type Warning
     }
 }
+
+function Remove-Bloatware {
+    <#
+    .SYNOPSIS
+        Remove aplicativos nativos (bloatware) do Windows.
+    .DESCRIPTION
+        Remove aplicativos AppX pre-instalados que nao sao essenciais para
+        o ambiente corporativo, como Jogos, Xbox, Noticias, Clima, etc.
+    #>
+    Write-Log "REMOCAO DE BLOATWARE (APPS NATIVOS)" -Type Info -Color Cyan
+
+    $bloatList = @(
+        "Microsoft.XboxApp",
+        "Microsoft.XboxGamingOverlay",
+        "Microsoft.Xbox.TCUI",
+        "Microsoft.XboxSpeechToTextOverlay",
+        "Microsoft.GamingApp",
+        "Microsoft.YourPhone",
+        "Microsoft.GetHelp",
+        "Microsoft.Getstarted",
+        "Microsoft.ZuneMusic",
+        "Microsoft.ZuneVideo",
+        "Microsoft.SolitaireCollection",
+        "Microsoft.BingNews",
+        "Microsoft.BingWeather",
+        "Microsoft.Microsoft3DViewer",
+        "Microsoft.People",
+        "Microsoft.WindowsFeedbackHub"
+    )
+
+    $removedCount = 0
+
+    foreach ($app in $bloatList) {
+        Write-Host "Verificando: $app" -ForegroundColor DarkGray
+        try {
+            $package = Get-AppxPackage -Name $app -ErrorAction SilentlyContinue
+            if ($package) {
+                Write-Log "-> Removendo $app..." -Type Info -Color Yellow
+                # Remove do usuario atual
+                $package | Remove-AppxPackage -ErrorAction Stop
+                
+                # Tenta remover do provisionamento (para novos usuarios) - Requer Admin
+                Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq $app } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Out-Null
+                
+                $removedCount++
+            }
+        } catch {
+            Write-Log "-> Falha ao remover $app: $_" -Type Warning
+        }
+    }
+
+    if ($removedCount -gt 0) {
+        Write-Log "Total de apps removidos: $removedCount" -Type Success
+    } else {
+        Write-Log "Nenhum bloatware listado foi encontrado." -Type Info
+    }
+}
