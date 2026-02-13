@@ -149,10 +149,21 @@ function Install-CorporateSoftware {
 
     $success = 0
     $fail = 0
+    
+    # Variaveis para Barra de Progresso
+    $totalPackages = $packages.Count
+    $currentStep = 0
 
     # Itera sobre cada software definido no JSON
     foreach ($pkg in $packages) {
-        Write-Log "Verificando: $($pkg.Id)" -Type Info -Color Yellow
+        $currentStep++
+        $percentComplete = [math]::Round(($currentStep / $totalPackages) * 100)
+        $progressPrefix = "[$currentStep/$totalPackages]"
+        
+        # Atualiza Barra de Progresso (Status Inicial)
+        Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Analisando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Verificando instalacao..."
+
+        Write-Log "$progressPrefix Verificando: $($pkg.Id)" -Type Info -Color Yellow
         
         # Verifica se o software ja esta no sistema para evitar reinstalacao desnecessaria
         $isInstalled = $false
@@ -169,6 +180,8 @@ function Install-CorporateSoftware {
             # --- CASO ESPECIAL: GOOGLE CHROME ---
             # Bypass Winget para evitar erros de hash mismatch recorrentes
             if ($pkg.Id -eq "Google.Chrome") {
+                Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando Chrome (MSI)" -PercentComplete $percentComplete -CurrentOperation "Baixando e Instalando..."
+                
                 if (Install-ChromeStandalone) {
                     $success++
                 } else {
@@ -178,6 +191,7 @@ function Install-CorporateSoftware {
             }
 
             Write-Log "-> Instalando via Winget..." -Type Info -Color Green
+            Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Executando Winget..."
             
             # Monta os argumentos especificos do pacote
             $cmdArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
@@ -203,6 +217,8 @@ function Install-CorporateSoftware {
                     # TENTATIVA 1: Fallback removendo o locale (as vezes o locale pt-BR falha no Winget)
                     if ($pkg.Locale) {
                         Write-Log "-> Erro com locale. Tentando padrao..." -Type Warning
+                        Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Retry $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Winget (Sem Locale)..."
+                        
                         $fallbackArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
                         & winget $fallbackArgs
                         if ($LASTEXITCODE -eq 0) {
@@ -215,6 +231,7 @@ function Install-CorporateSoftware {
                     # TENTATIVA 2: FALLBACK PARA CHOCOLATEY (Se houver ID de fallback configurado)
                     if ($wingetFailed -and $pkg.ChocoId) {
                         Write-Log "-> Falha no Winget ($wingetError). Tentando Chocolatey: $($pkg.ChocoId)..." -Type Info -Color Magenta
+                        Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Fallback $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Instalando via Chocolatey..."
                         
                         # Garante que o motor do Choco esta instalado
                         if (Install-ChocolateyEngine) {
@@ -249,6 +266,9 @@ function Install-CorporateSoftware {
             }
         }
     }
+    
+    # Remove a barra de progresso ao finalizar
+    Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Completed
 
     # Resumo final da etapa de deploy
     Write-Log "`nDeploy Finalizado. Sucesso: $success | Falhas: $fail" -Type Info -Color Cyan
