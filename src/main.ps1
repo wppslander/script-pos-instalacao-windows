@@ -59,8 +59,9 @@ try {
 # Remove bloatware e telemetria antes de instalar softs corporativos
 try {
     Disable-Telemetry
+    Remove-Bloatware
 } catch {
-    Register-Failure "Debloat" "Falha na otimizacao de privacidade: $_"
+    Register-Failure "Debloat" "Falha na otimizacao de privacidade/bloatware: $_"
 }
 
 # 2. Deploy de Software (Winget/Choco/MSI)
