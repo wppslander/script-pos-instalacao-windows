@@ -24,6 +24,7 @@ try {
 
     # Carrega os demais modulos de funcionalidade
     . "$ScriptPath\modules\glpi_installer.ps1"
+    . "$ScriptPath\modules\software_helpers.ps1"
     . "$ScriptPath\modules\software_deploy.ps1"
     . "$ScriptPath\modules\sys_debloat.ps1"
 } catch {
@@ -71,6 +72,8 @@ if ($opcao -eq "1") {
     try {
         Disable-Telemetry
         Remove-Bloatware
+        Disable-WindowsSuggestions
+        Disable-PrintScreenSnipping
     } catch {
         Register-Failure "Debloat" "Falha na otimizacao de privacidade/bloatware: $_"
     }
