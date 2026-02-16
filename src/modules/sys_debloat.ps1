@@ -117,7 +117,7 @@ function Remove-Bloatware {
                 $removedCount++
             }
         } catch {
-            Write-Log "-> Falha ao remover $app: $_" -Type Warning
+            Write-Log "-> Falha ao remover ${app}: $_" -Type Warning
         }
     }
 
