@@ -1,97 +1,9 @@
 # ==========================================
 # MODULE: Software Deploy (Winget)
 # Este modulo gerencia a instalacao de aplicativos corporativos
-# utilizando Winget como motor principal, Chocolatey como fallback
-# e instaladores MSI diretos para casos especificos (Chrome).
+# utilizando Winget como motor principal.
+# Funcoes auxiliares e de configuracao estao em software_helpers.ps1
 # ==========================================
-
-function Install-ChocolateyEngine {
-    <#
-    .SYNOPSIS
-        Instala o motor do Chocolatey caso nao esteja presente no sistema.
-    .DESCRIPTION
-        Verifica se o comando 'choco' existe. Se nao, executa o script oficial
-        de instalacao via PowerShell, ajustando as politicas de execucao e protocolos de seguranca.
-    #>
-    # Verifica se o executavel do choco ja esta disponivel no PATH
-    if (Get-Command "choco" -ErrorAction SilentlyContinue) {
-        return $true
-    }
-
-    Write-Log "-> Chocolatey nao encontrado. Instalando..." -Type Warning
-    try {
-        # Define politica de execucao temporaria para permitir o script de instalacao
-        Set-ExecutionPolicy Bypass -Scope Process -Force; 
-        # Habilita suporte a TLS 1.2 (necessario para baixar do site do Chocolatey)
-        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072; 
-        # Baixa e executa o script de instalacao oficial
-        iex ((New-Object System.Net.WebClient).DownloadString('https://community.chocolatey.org/install.ps1'))
-        
-        # Atualiza a variavel de ambiente PATH na sessao atual para reconhecer o novo binario
-        $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
-        
-        # Verifica novamente se a instalacao foi bem sucedida
-        if (Get-Command "choco" -ErrorAction SilentlyContinue) {
-            Write-Log "-> Chocolatey instalado com sucesso." -Type Success
-            return $true
-        }
-    } catch {
-        # Registra falha caso ocorra erro no download ou execucao
-        Write-Log "Falha ao instalar Chocolatey: $_" -Type Error
-        Register-Failure "Chocolatey Install" "Falha na instalacao do motor Choco: $_"
-    }
-    return $false
-}
-
-function Install-ChromeStandalone {
-    <#
-    .SYNOPSIS
-        Instala o Google Chrome via MSI Enterprise Standalone.
-    .DESCRIPTION
-        Refatoracao critica: O Winget apresenta falhas frequentes de 'hash mismatch' no Chrome 
-        devido ao delay entre o update do binario pela Google e a atualizacao do manifesto no Winget-PKGS.
-        O uso do instalador MSI Enterprise garante a versao mais recente e instalacao silenciosa deterministica.
-    #>
-    Write-Log "Instalando Google Chrome (MSI Standalone)..." -Type Info -Color Green
-    
-    # URL direta para o instalador MSI Enterprise de 64 bits (sempre aponta para a ultima versao)
-    $chromeMsiUrl = "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi"
-    # Local temporario para salvar o instalador
-    $tempMsiPath = Join-Path $env:TEMP "GoogleChromeStandaloneEnterprise64.msi"
-
-    try {
-        Write-Log "-> Baixando instalador oficial da Google..." -Type Info
-        # Baixa o arquivo MSI ignorando erros de parsing de HTML
-        Invoke-WebRequest -Uri $chromeMsiUrl -OutFile $tempMsiPath -UseBasicParsing
-        
-        Write-Log "-> Executando instalacao MSI silenciosa..." -Type Info
-        # Parametros MSIExec:
-        # /i: Instalar
-        # /qn: Quiet, No UI (Instalacao totalmente silenciosa)
-        # /norestart: Impede que o computador reinicie automaticamente
-        $process = Start-Process -FilePath "msiexec.exe" -ArgumentList "/i `"$tempMsiPath`"", "/qn", "/norestart" -Wait -PassThru
-        
-        # Codigo 0 = Sucesso. Codigo 3010 = Sucesso (reinicializacao pendente).
-        if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
-            Write-Log "-> Google Chrome instalado com sucesso." -Type Success
-            return $true
-        } else {
-            Write-Log "-> Erro na instalacao do MSI. Codigo de saida: $($process.ExitCode)" -Type Error
-            Register-Failure "Chrome Install" "MSI Exit Code: $($process.ExitCode)"
-        }
-    } catch {
-        # Captura erros de rede ou permissao
-        Write-Log "-> Falha critica no processo de instalacao do Chrome: $_" -Type Error
-        Register-Failure "Chrome Install" "Exception: $_"
-    } finally {
-        # Garante que o arquivo temporario seja deletado para nao ocupar espaco
-        if (Test-Path $tempMsiPath) {
-            Write-Log "-> Limpando arquivo temporario..." -Type Info -Color DarkGray
-            Remove-Item -Path $tempMsiPath -Force
-        }
-    }
-    return $false
-}
 
 function Install-CorporateSoftware {
     <#
@@ -269,6 +181,9 @@ function Install-CorporateSoftware {
     
     # Remove a barra de progresso ao finalizar
     Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Completed
+
+    # CONFIGURACAO POS-INSTALACAO (Apps Especificos)
+    Configure-FlameshotAutoStart
 
     # Resumo final da etapa de deploy
     Write-Log "`nDeploy Finalizado. Sucesso: $success | Falhas: $fail" -Type Info -Color Cyan

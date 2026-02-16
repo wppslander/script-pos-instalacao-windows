@@ -127,3 +127,66 @@ function Remove-Bloatware {
         Write-Log "Nenhum bloatware listado foi encontrado." -Type Info
     }
 }
+
+function Disable-WindowsSuggestions {
+    <#
+    .SYNOPSIS
+        Desativa notificacoes de sugestoes, dicas e experiencias de boas-vindas.
+    .DESCRIPTION
+        Objetivo: "Entrar em configuracao notificacao > configuracao adicional e desabilitar todas a opcoes"
+        Modifica o registro do usuario atual para silenciar o ruido do sistema.
+    #>
+    Write-Log "OTIMIZACAO DE NOTIFICACOES E SUGESTOES" -Type Info -Color Cyan
+
+    $cdmPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\ContentDeliveryManager"
+    
+    # Garante que o caminho existe
+    if (!(Test-Path $cdmPath)) { New-Item -Path $cdmPath -Force | Out-Null }
+
+    # Lista de chaves e seus significados para facilitar manutencao futura
+    $configuracoes = @{
+        "SubscribedContent-338389Enabled" = "Dicas e Truques do Windows";
+        "SubscribedContent-338388Enabled" = "Notificacoes de Provedores de Sincronizacao";
+        "SubscribedContent-310093Enabled" = "Experiencia de Boas Vindas do Windows";
+        "SubscribedContent-353696Enabled" = "Sugestoes sobre como usar o Windows";
+        "SystemPaneSuggestionsEnabled"    = "Sugestoes no menu Iniciar e Config";
+        "SoftLandingEnabled"              = "Dicas introdutorias";
+        "RotatingLockScreenEnabled"       = "Sugestoes na tela de bloqueio";
+        "SubscribedContent-338387Enabled" = "Sugestoes gerais de conteudo"
+    }
+
+    foreach ($key in $configuracoes.Keys) {
+        $descricao = $configuracoes[$key]
+        Write-Log "Desabilitando: $descricao ($key)..." -Type Info -Color DarkGray
+        try {
+            Set-ItemProperty -Path $cdmPath -Name $key -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+        } catch {
+            Write-Log "-> Falha ao definir $key: $_" -Type Warning
+        }
+    }
+    
+    Write-Log "-> Sugestoes do Windows desabilitadas." -Type Success
+}
+
+function Disable-PrintScreenSnipping {
+    <#
+    .SYNOPSIS
+        Libera a tecla PrintScreen para uso de terceiros (ex: Flameshot).
+    .DESCRIPTION
+        Objetivo: "Entrar em configuracao > assecibilidade > teclado > desabilitar use tecla PrtSC"
+        Desativa a captura de tela nativa do Windows (Snipping Tool) ao pressionar PrtSc.
+    #>
+    Write-Log "CONFIGURACAO DE TECLADO (PRINTSCREEN)" -Type Info -Color Cyan
+    
+    $keyboardPath = "HKCU:\Control Panel\Keyboard"
+    
+    Write-Log "Desabilitando captura nativa na tecla PrintScreen..." -Type Info
+    try {
+        # Valor 0 = Desabilitado (Permite que Flameshot/Lightshot assumam a tecla)
+        # Valor 1 = Habilitado (Abre Ferramenta de Captura do Windows)
+        Set-ItemProperty -Path $keyboardPath -Name "PrintScreenKeyForSnippingEnabled" -Value 0 -Type DWord -Force -ErrorAction Stop
+        Write-Log "-> Tecla PrintScreen liberada para softwares de terceiros." -Type Success
+    } catch {
+        Write-Log "-> Falha ao configurar PrintScreen: $_" -Type Warning
+    }
+}
