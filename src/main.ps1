@@ -47,37 +47,52 @@ try {
     Register-Failure "Internet Check" "Falha na verificacao de internet: $_"
 }
 
+# --- SELECAO DE MODO DE OPERACAO ---
+Write-Host "`nSELECIONE O MODO DE EXECUCAO:" -ForegroundColor Cyan
+    Write-Host "1. Instalacao Completa (Otimizacao + Softwares + GLPI)" -ForegroundColor White
+    Write-Host "2. Apenas Configuracao do GLPI" -ForegroundColor White
+    Write-Host "3. Apenas Instalacao de Softwares" -ForegroundColor White
+    $opcao = Read-Host "`nOpcao (Padrao: 1)"
+if ([string]::IsNullOrWhiteSpace($opcao)) { $opcao = "1" }
+
 # 1. Preparacao do Sistema (System Prep)
-# Ajustes de registro necessarios antes de instalar qualquer coisa (ex: SSL Fix)
-try {
-    Enable-StoreSSLBypass
-} catch {
-    Register-Failure "System Prep" "Falha no SSL Bypass: $_"
+if ($opcao -eq "1" -or $opcao -eq "3") {
+    # Ajustes de registro necessarios antes de instalar qualquer coisa (ex: SSL Fix)
+    try {
+        Enable-StoreSSLBypass
+    } catch {
+        Register-Failure "System Prep" "Falha no SSL Bypass: $_"
+    }
 }
 
-# 1.1 Privacidade & Debloat
-# Remove bloatware e telemetria antes de instalar softs corporativos
-try {
-    Disable-Telemetry
-    Remove-Bloatware
-} catch {
-    Register-Failure "Debloat" "Falha na otimizacao de privacidade/bloatware: $_"
+if ($opcao -eq "1") {
+    # 1.1 Privacidade & Debloat
+    # Remove bloatware e telemetria antes de instalar softs corporativos
+    try {
+        Disable-Telemetry
+        Remove-Bloatware
+    } catch {
+        Register-Failure "Debloat" "Falha na otimizacao de privacidade/bloatware: $_"
+    }
 }
 
 # 2. Deploy de Software (Winget/Choco/MSI)
-# Onde a instalacao pesada acontece
-try {
-    Install-CorporateSoftware
-} catch {
-    Register-Failure "Software Deploy" "Erro inesperado: $_"
+if ($opcao -eq "1" -or $opcao -eq "3") {
+    try {
+        Install-CorporateSoftware
+    } catch {
+        Register-Failure "Software Deploy" "Erro inesperado: $_"
+    }
 }
 
 # 3. Configuracao do GLPI
-# Configura o agente de inventario apos as instalacoes
-try {
-    Configure-GlpiAgent
-} catch {
-    Register-Failure "GLPI Config" "Erro inesperado: $_"
+if ($opcao -eq "1" -or $opcao -eq "2") {
+    # Configura o agente de inventario apos as instalacoes
+    try {
+        Configure-GlpiAgent
+    } catch {
+        Register-Failure "GLPI Config" "Erro inesperado: $_"
+    }
 }
 
 # 4. Finalizacao

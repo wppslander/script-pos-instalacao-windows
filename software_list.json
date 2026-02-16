@@ -12,7 +12,7 @@
     "ChocoId": "anydesk"
   },
   {
-    "Id": "Minustek.WinDirStat",
+    "Id": "WinDirStat.WinDirStat",
     "Source": "winget",
     "Locale": null,
     "ChocoId": "windirstat"
@@ -36,9 +36,9 @@
     "ChocoId": "firefox"
   },
   {
-    "Id": "Mozilla.Thunderbird.pt-BR",
+    "Id": "Mozilla.Thunderbird",
     "Source": "winget",
-    "Locale": null,
+    "Locale": "pt-BR",
     "ChocoId": "thunderbird"
   },
   {
@@ -111,8 +111,8 @@
     "Id": "9NKSQGP7F2NH",
     "Source": "msstore",
     "Locale": null,
-    "Comment": "WhatsApp",
-    "ChocoId": "whatsapp"
+    "Comment": "WhatsApp (Microsoft Store Version - Standalone Removed)",
+    "ChocoId": null
   },
   {
     "Id": "GLPI-Project.GLPI-Agent",

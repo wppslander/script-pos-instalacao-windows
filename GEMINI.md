@@ -12,6 +12,7 @@
 4.  **Confirm** the User Account Control (UAC) prompt to allow Administrator privileges.
 5.  **Follow the on-screen prompts**:
     -   The script will verify internet connectivity automatically.
+    -   **Select the execution mode** (Full, GLPI Only, or Software Only).
     -   Enter the **FILIAL** (Branch) (e.g., HEADQUARTERS).
     -   Enter the **USER** (e.g., john.doe).
     -   Confirm the generated TAG.

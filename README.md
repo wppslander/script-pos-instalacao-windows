@@ -12,6 +12,10 @@
 4.  **Confirme** a solicitação do Controle de Conta de Usuário (UAC) para permitir privilégios de Administrador.
 5.  **Siga as instruções na tela**:
     -   O script verificará a conexão com a internet automaticamente.
+    -   **Selecione o modo de execução**:
+        -   `1`: Instalação Completa (Padrão).
+        -   `2`: Apenas Configuração do GLPI.
+        -   `3`: Apenas Instalação de Softwares.
     -   Digite a **FILIAL** (ex: MATRIZ).
     -   Digite o **USUÁRIO** (ex: joao.silva).
     -   Confirme a TAG gerada.
