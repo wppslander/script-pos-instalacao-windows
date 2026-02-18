@@ -199,3 +199,93 @@ function Show-ExecutionSummary {
     }
     Write-Host "========================================================" -ForegroundColor Cyan
 }
+
+function Register-AutoUpdateTask {
+    <#
+    .SYNOPSIS
+        Instala e agenda o script de atualização automática.
+    .DESCRIPTION
+        Copia o script auto_update.ps1 para ProgramData e cria uma tarefa agendada
+        para executá-lo semanalmente com privilégios de sistema.
+    #>
+    Write-Log "Configurando tarefa agendada de atualização..." -Type Info
+    
+    # 1. Definir caminhos
+    $sourceScript = Join-Path $PSScriptRoot "auto_update.ps1"
+    $destDir = "$env:ProgramData\GeminiPostInstall"
+    $destScript = Join-Path $destDir "auto_update.ps1"
+    
+    # 2. Criar diretório de destino
+    if (!(Test-Path $destDir)) {
+        New-Item -ItemType Directory -Force -Path $destDir | Out-Null
+    }
+    
+    # 3. Copiar script
+    if (Test-Path $sourceScript) {
+        Copy-Item -Path $sourceScript -Destination $destScript -Force
+        Write-Log "Script de atualização copiado para: $destScript" -Type Success
+    } else {
+        Write-Log "ERRO CRITICO: Script de atualização não encontrado em $sourceScript" -Type Error
+        Register-Failure "AutoUpdate" "Script fonte nao encontrado."
+        return
+    }
+    
+    # 4. Agendar Tarefa (Semanal, System, Run whether user is logged on or not)
+    $taskName = "GeminiAutoUpdate"
+    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destScript`""
+    $trigger = New-ScheduledTaskTrigger -Weekly -Days Wednesday -At 12:00
+    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+    
+    try {
+        Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
+        Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
+        Write-Log "Tarefa '$taskName' agendada com sucesso (Toda Quarta @ 12:00)." -Type Success
+    } catch {
+        $errMsg = $_.Exception.Message
+        Write-Log "Falha ao agendar tarefa: $errMsg" -Type Error
+        Register-Failure "AutoUpdate" "Falha no agendamento: $errMsg"
+    }
+}
+
+function Test-PreFlightChecks {
+    <#
+    .SYNOPSIS
+        Executa verificacoes de seguranca e ambiente antes de iniciar o menu.
+    .DESCRIPTION
+        1. Verifica se esta rodando como Administrador (Obrigatorio).
+        2. Verifica se o Winget esta disponivel (Alerta).
+        3. Verifica se ha reinicializacao pendente (Alerta).
+    #>
+    Write-Header "Pre-Flight Checks"
+
+    # 1. Admin Check
+    $identity = [Security.Principal.WindowsIdentity]::GetCurrent()
+    $principal = [Security.Principal.WindowsPrincipal]$identity
+    if (-not $principal.IsInRole([Security.Principal.WindowsBuiltInRole]::Administrator)) {
+        Register-Failure "Pre-Check" "Script executado sem privilegios de Admin."
+        throw "ERRO CRITICO: Este script precisa ser executado como Administrador!"
+    }
+    Write-Host "[OK] Privilegios de Admin confirmados." -ForegroundColor Green
+
+    # 2. Winget Check
+    if (-not (Get-Command "winget" -ErrorAction SilentlyContinue)) {
+         Register-Failure "Pre-Check" "Winget nao encontrado no PATH."
+         Write-Warning "ALERTA: Winget nao detectado. A instalacao de softwares falhara."
+    } else {
+        Write-Host "[OK] Winget detectado." -ForegroundColor Green
+    }
+
+    # 3. Pending Reboot Check
+    $rebootPaths = @(
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\Component Based Servicing\RebootPending",
+        "HKLM:\SOFTWARE\Microsoft\Windows\CurrentVersion\WindowsUpdate\Auto Update\RebootRequired"
+    )
+    foreach ($path in $rebootPaths) {
+        if (Test-Path $path) {
+            Write-Warning "ALERTA: O Windows possui uma reinicializacao pendente (Windows Update/Componentes)."
+            Write-Warning "Recomendado reiniciar antes de continuar para evitar erros em instalacoes."
+            # Nao damos throw aqui para deixar o usuario decidir, mas avisamos.
+            break
+        }
+    }
+}
