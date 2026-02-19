@@ -54,10 +54,13 @@ O projeto está organizado em uma estrutura modular para facilitar a manutençã
 ├── src/
     ├── main.ps1              # Script orquestrador principal.
     └── modules/
+        ├── orchestrator.ps1  # Controle de fluxo e menus.
         ├── sys_utils.ps1     # Utilitários (Internet Check, Fix SSL, Leitura de Credenciais).
         ├── sys_debloat.ps1   # Otimização de privacidade e desativação de telemetria.
         ├── glpi_installer.ps1 # Configuração e Registro do Agente GLPI.
-        └── software_deploy.ps1 # Motor de instalação de softwares (Winget com fallback Choco).
+        ├── software_deploy.ps1 # Motor de instalação de softwares (Winget com fallback Choco).
+        ├── software_helpers.ps1 # Funções auxiliares (Chocolatey, Chrome MSI).
+        └── auto_update.ps1   # Lógica de atualização automática de apps.
 ```
 
 ---

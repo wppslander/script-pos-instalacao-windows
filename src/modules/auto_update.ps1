@@ -7,7 +7,6 @@ $safeToUpdate = @(
     "7zip.7zip",
     "VideoLAN.VLC",
     "voidtools.Everything",
-    "RaMMicHaeL.Unchecky",
     "WinDirStat.WinDirStat",
     "CrystalDewWorld.CrystalDiskInfo",
     "Flameshot.Flameshot",

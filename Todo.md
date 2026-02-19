@@ -7,8 +7,8 @@ Este documento rastreia ideias de melhorias, refatorações e novas funcionalida
 - [ ] **Assinatura de Code**: Assinar os scripts `.ps1` digitalmente para permitir execução em políticas de `AllSigned` (aumentando a segurança contra modificações maliciosas).
 
 ## 🚀 Novas Funcionalidades
-- [ ] **Módulo de Debloat**: Criar `src/modules/sys_debloat.ps1` para:
-    - [ ] Remover Apps nativos indesejados (Candy Crush, Xbox, News, Solitaire).
+- [x] **Módulo de Debloat**: Criar `src/modules/sys_debloat.ps1` para:
+    - [x] Remover Apps nativos indesejados (Candy Crush, Xbox, News, Solitaire).
     - [x] Desabilitar Telemetria básica.
 - [ ] **Windows Updates**: Adicionar etapa para forçar a verificação e instalação de atualizações do Windows Update (modulo `PSWindowsUpdate`).
 - [ ] **Drivers de Fabricante**: Integração com ferramentas de update de BIOS/Drivers (Dell Command Update, Lenovo System Update, HP Image Assistant).
@@ -20,7 +20,7 @@ Este documento rastreia ideias de melhorias, refatorações e novas funcionalida
 - [ ] **Validação de Hash**: Implementar verificação de integridade dos arquivos críticos (`software_list.json`, `main.ps1`) antes da execução.
 
 ## 🎨 Experiência do Usuário (UX)
-- [ ] **Barra de Progresso**: Implementar `Write-Progress` no loop de instalação para mostrar visualmente quanto falta (Ex: "Instalando 3 de 15: Google Chrome...").
+- [x] **Barra de Progresso**: Implementar `Write-Progress` no loop de instalação para mostrar visualmente quanto falta (Ex: "Instalando 3 de 15: Google Chrome...").
 - [ ] **Resumo Rico**: Ao final, gerar um HTML simples com o relatório do que falhou e o que funcionou, além do log em texto.
 
 ## 🔧 DevOps & CI/CD

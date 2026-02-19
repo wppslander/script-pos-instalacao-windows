@@ -161,7 +161,7 @@ function Disable-WindowsSuggestions {
         try {
             Set-ItemProperty -Path $cdmPath -Name $key -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
         } catch {
-            Write-Log "-> Falha ao definir $key: $_" -Type Warning
+            Write-Log "-> Falha ao definir ${key}: $_" -Type Warning
         }
     }
     
