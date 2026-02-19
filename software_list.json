@@ -66,12 +66,6 @@
     "ChocoId": "microsip"
   },
   {
-    "Id": "RaMMicHaeL.Unchecky",
-    "Source": "winget",
-    "Locale": null,
-    "ChocoId": "unchecky"
-  },
-  {
     "Id": "voidtools.Everything",
     "Source": "winget",
     "Locale": null,

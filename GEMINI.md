@@ -33,10 +33,13 @@ The project is organized into a modular structure to facilitate maintenance and 
 ├── src/
     ├── main.ps1              # Main orchestrator script.
     └── modules/
+        ├── orchestrator.ps1  # Main execution flow and menu system.
         ├── sys_utils.ps1     # System utilities (Internet Check, Credentials, SSL Fix).
+        ├── sys_debloat.ps1   # Privacy, telemetry disable, and bloatware removal.
         ├── glpi_installer.ps1 # Logic for installing and configuring GLPI Agent.
         ├── software_deploy.ps1 # Software deployment logic.
-        └── unigetui_config.ps1 # Post-install configuration for UniGetUI.
+        ├── software_helpers.ps1 # Helper functions for software (Chocolatey, Chrome MSI).
+        └── auto_update.ps1   # Self-update logic for installed apps.
 ```
 
 ---
@@ -53,8 +56,8 @@ GLPI_PASSWORD=glpi_password
 
 ### Adding or Removing Software
 To modify the list of installed applications:
-1.  Open `src/modules/software_deploy.ps1`.
-2.  Edit the `$packages` array by adding or removing lines.
+1.  Open `software_list.json`.
+2.  Add or remove JSON objects following the existing pattern (Id, Source, ChocoId).
 
 ---
 
