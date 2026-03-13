@@ -38,7 +38,7 @@ The project is organized into a modular structure to facilitate maintenance and 
         ├── sys_debloat.ps1   # Privacy, telemetry disable, and bloatware removal.
         ├── glpi_installer.ps1 # Logic for installing and configuring GLPI Agent.
         ├── software_deploy.ps1 # Software deployment logic.
-        ├── software_helpers.ps1 # Helper functions for software (Chocolatey, Chrome MSI).
+        ├── software_helpers.ps1 # Helper functions for software (Chocolatey, Settings).
         └── auto_update.ps1   # Self-update logic for installed apps.
 ```
 

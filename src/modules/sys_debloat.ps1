@@ -41,21 +41,22 @@ function Disable-Telemetry {
         Write-Log "-> Falha ao desativar Advertising ID: $_" -Type Warning
     }
 
-    # 3. Servico DiagTrack (Experiencias de Usuario Conectado e Telemetria)
-    # Servico principal responsavel pelo envio de dados de diagnostico
-    Write-Log "Parando servico de rastreamento (DiagTrack)..." -Type Info
-    try {
-        if (Get-Service "DiagTrack" -ErrorAction SilentlyContinue) {
-            # Para o servico imediatamente
-            Stop-Service "DiagTrack" -Force -ErrorAction SilentlyContinue
-            # Desabilita o inicio automatico
-            Set-Service "DiagTrack" -StartupType Disabled -ErrorAction Stop
-            Write-Log "-> Servico DiagTrack parado e desativado." -Type Success
-        } else {
-            Write-Log "-> Servico DiagTrack nao encontrado (ja removido?)." -Type Info -Color DarkGray
-        }
-    } catch {
-        Write-Log "-> Erro ao gerenciar servico DiagTrack: $_" -Type Warning
+    # 3. Servicos de Telemetria e Rastreamento
+    # DiagTrack: Experiencias de Usuario Conectado e Telemetria (Principal)
+    # dmwappushservice: WAP Push Message Routing Service (Telemetria Mobile/Push)
+    # WerSvc: Servico de Relatorio de Erros do Windows
+    # SysMain: Superfetch (Opcional, mas reduz uso de disco em ambientes virtualizados/HDD)
+    Write-Log "Gerenciando servicos de rastreamento e nao essenciais..." -Type Info
+    
+    $telemetryServices = @(
+        "DiagTrack", 
+        "dmwappushservice", 
+        "WerSvc",
+        "SysMain"
+    )
+
+    foreach ($serviceName in $telemetryServices) {
+        Disable-ServiceSafe -ServiceName $serviceName
     }
 
     # 4. Desabilitar Cortana
@@ -105,16 +106,19 @@ function Remove-Bloatware {
     foreach ($app in $bloatList) {
         Write-Host "Verificando: $app" -ForegroundColor DarkGray
         try {
-            $package = Get-AppxPackage -Name $app -ErrorAction SilentlyContinue
-            if ($package) {
-                Write-Log "-> Removendo $app..." -Type Info -Color Yellow
-                # Remove do usuario atual
-                $package | Remove-AppxPackage -ErrorAction Stop
-                
-                # Tenta remover do provisionamento (para novos usuarios) - Requer Admin
-                Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -eq $app } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Out-Null
-                
-                $removedCount++
+            # Busca com curingas para capturar variacoes de versao
+            $packages = Get-AppxPackage -Name "*$app*" -ErrorAction SilentlyContinue
+            if ($packages) {
+                foreach ($package in $packages) {
+                    Write-Log "-> Removendo $($package.Name)..." -Type Info -Color Yellow
+                    # Remove do usuario atual
+                    $package | Remove-AppxPackage -ErrorAction Stop
+                    
+                    # Tenta remover do provisionamento (para novos usuarios) - Requer Admin
+                    Get-AppxProvisionedPackage -Online | Where-Object { $_.DisplayName -match $app -or $_.PackageName -match $app } | Remove-AppxProvisionedPackage -Online -ErrorAction SilentlyContinue | Out-Null
+                    
+                    $removedCount++
+                }
             }
         } catch {
             Write-Log "-> Falha ao remover ${app}: $_" -Type Warning

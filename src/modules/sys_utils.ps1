@@ -150,7 +150,7 @@ function Write-Log {
 
     # Saída em Arquivo (Persistencia)
     if ($Global:LogFile) {
-        Add-Content -Path $Global:LogFile -Value "$prefix $Message"
+        Add-Content -Path $Global:LogFile -Value "$prefix $Message" -Encoding UTF8
     }
 }
 
@@ -233,7 +233,7 @@ function Register-AutoUpdateTask {
     # 4. Agendar Tarefa (Semanal, System, Run whether user is logged on or not)
     $taskName = "GeminiAutoUpdate"
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destScript`""
-    $trigger = New-ScheduledTaskTrigger -Weekly -Days Wednesday -At 12:00
+    $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Wednesday -At 12:00
     $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
     
     try {
@@ -247,8 +247,59 @@ function Register-AutoUpdateTask {
     }
 }
 
-function Test-PreFlightChecks {
+function Disable-ServiceSafe {
     <#
+    .SYNOPSIS
+        Desativa um servico para que nao inicie no proximo boot.
+    .PARAMETER ServiceName
+        Nome do servico (ex: DiagTrack).
+    #>
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ServiceName
+    )
+
+    Write-Log "Desativando servico: $ServiceName..." -Type Info -Color DarkGray
+
+    try {
+        # 1. Desativa o inicio do servico (Operacao instantanea via Registro)
+        # Isso garante que no proximo boot ele nao inicie, independente de estar rodando agora.
+        Set-Service -Name $ServiceName -StartupType Disabled -ErrorAction SilentlyContinue
+
+        # 2. Tenta parar o servico de forma "Fire and Forget" (Nao aguarda o encerramento)
+        # O parametro -NoWait impede que o PowerShell fique travado esperando o servico fechar.
+        Stop-Service -Name $ServiceName -Force -NoWait -ErrorAction SilentlyContinue
+
+        Write-Log "-> Servico $ServiceName configurado como DESATIVADO." -Type Success
+    } catch {
+        Write-Log "-> Nao foi possivel configurar o servico $ServiceName (pode nao existir)." -Type Info -Color DarkGray
+    }
+}
+
+function Stop-ProcessIfRunning {
+    <#
+    .SYNOPSIS
+        Fecha um processo se ele estiver em execução para evitar travamentos em instalações.
+    .PARAMETER ProcessName
+        Nome do processo (sem .exe).
+    #>
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$ProcessName
+    )
+
+    if (Get-Process -Name $ProcessName -ErrorAction SilentlyContinue) {
+        Write-Log "Fechando processo ativo: $ProcessName..." -Type Warning
+        try {
+            Stop-Process -Name $ProcessName -Force -ErrorAction SilentlyContinue
+            Start-Sleep -Seconds 2 # Pequena pausa para garantir a liberação de arquivos
+        } catch {
+            Write-Log "Nao foi possivel encerrar $ProcessName." -Type Warning
+        }
+    }
+}
+
+function Test-PreFlightChecks {    <#
     .SYNOPSIS
         Executa verificacoes de seguranca e ambiente antes de iniciar o menu.
     .DESCRIPTION

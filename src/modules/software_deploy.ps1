@@ -11,7 +11,7 @@ function Install-CorporateSoftware {
         Orquestrador principal de deploy de software.
     .DESCRIPTION
         Lê a lista de pacotes do arquivo software_list.json e tenta instalar cada um.
-        Utiliza Winget como primeira opcao, mas possui excecoes (Chrome) e fallback (Chocolatey).
+        Utiliza Winget como primeira opcao e fallback (Chocolatey).
     #>
     Write-Log "DEPLOY DE SOFTWARES CORPORATIVOS" -Type Info -Color Cyan
 
@@ -89,18 +89,9 @@ function Install-CorporateSoftware {
             Write-Log "-> OK (Instalado)" -Type Info -Color Gray
             $success++
         } else {
-            # --- CASO ESPECIAL: GOOGLE CHROME ---
-            # Bypass Winget para evitar erros de hash mismatch recorrentes
-            if ($pkg.Id -eq "Google.Chrome") {
-                Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando Chrome (MSI)" -PercentComplete $percentComplete -CurrentOperation "Baixando e Instalando..."
-                
-                if (Install-ChromeStandalone) {
-                    $success++
-                } else {
-                    $fail++
-                }
-                continue # Pula para o proximo item do loop
-            }
+            # Se for navegador, tenta fechar processos ativos para evitar erros de bloqueio
+            if ($pkg.Id -match "Chrome") { Stop-ProcessIfRunning -ProcessName "chrome" }
+            if ($pkg.Id -match "Firefox") { Stop-ProcessIfRunning -ProcessName "firefox" }
 
             Write-Log "-> Instalando via Winget..." -Type Info -Color Green
             Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Executando Winget..."

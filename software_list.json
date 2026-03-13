@@ -54,6 +54,12 @@
     "ChocoId": "adobezeroreader"
   },
   {
+    "Id": "SumatraPDF.SumatraPDF",
+    "Source": "winget",
+    "Locale": null,
+    "ChocoId": "sumatrapdf"
+  },
+  {
     "Id": "Microsoft.Teams",
     "Source": "winget",
     "Locale": "pt-BR",
@@ -100,13 +106,6 @@
     "Source": "winget",
     "Locale": null,
     "ChocoId": "vcredist140"
-  },
-  {
-    "Id": "9NKSQGP7F2NH",
-    "Source": "msstore",
-    "Locale": null,
-    "Comment": "WhatsApp (Microsoft Store Version - Standalone Removed)",
-    "ChocoId": null
   },
   {
     "Id": "GLPI-Project.GLPI-Agent",
