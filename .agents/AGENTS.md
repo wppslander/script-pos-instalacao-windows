@@ -30,7 +30,6 @@ The project is organized into a modular structure to facilitate maintenance and 
 ├── reconfigurar-glpi.bat     # Reconfigures GLPI Agent on Windows (No installation).
 ├── credentials.txt           # Configuration file (GLPI Server, User, Password).
 ├── software_list.json        # List of applications to install (JSON format).
-├── GEMINI.md                 # Project documentation.
 ├── src/
     ├── main.ps1              # Main orchestrator script.
     └── modules/
