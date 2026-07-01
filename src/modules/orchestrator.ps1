@@ -89,6 +89,10 @@ function Invoke-GeminiPostInstall {
             Remove-Bloatware
             Disable-WindowsSuggestions
             Disable-PrintScreenSnipping
+            Disable-BingSearch
+            Disable-Copilot
+            Disable-WidgetsAndChat
+            Disable-ConsumerExperience
         } catch {
             Register-Failure "Debloat" "Falha na otimizacao de privacidade/bloatware: $_"
         }

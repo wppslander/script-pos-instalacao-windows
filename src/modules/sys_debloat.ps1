@@ -98,7 +98,11 @@ function Remove-Bloatware {
         "Microsoft.BingWeather",
         "Microsoft.Microsoft3DViewer",
         "Microsoft.People",
-        "Microsoft.WindowsFeedbackHub"
+        "Microsoft.WindowsFeedbackHub",
+        "Microsoft.549981C3F5F10",       # Cortana Modern App
+        "Microsoft.BingSports",          # Esportes
+        "Microsoft.BingFinance",         # Dinheiro/Finanças
+        "Microsoft.MixedReality.Portal"  # Portal de Realidade Misturada
     )
 
     $removedCount = 0
@@ -194,3 +198,104 @@ function Disable-PrintScreenSnipping {
         Write-Log "-> Falha ao configurar PrintScreen: $_" -Type Warning
     }
 }
+
+function Disable-BingSearch {
+    <#
+    .SYNOPSIS
+        Desativa pesquisas da web (Bing) no Menu Iniciar do Windows.
+    .DESCRIPTION
+        Faz com que as pesquisas no menu iniciar retornem apenas resultados locais,
+        tornando a pesquisa instantânea e economizando recursos de internet/rede.
+    #>
+    Write-Log "DESABILITANDO BING NO MENU INICIAR" -Type Info -Color Cyan
+    
+    $searchPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Search"
+    $policyPath = "HKCU:\Software\Policies\Microsoft\Windows\Explorer"
+    
+    if (!(Test-Path $searchPath)) { New-Item -Path $searchPath -Force | Out-Null }
+    if (!(Test-Path $policyPath)) { New-Item -Path $policyPath -Force | Out-Null }
+    
+    try {
+        Set-ItemProperty -Path $searchPath -Name "BingSearchEnabled" -Value 0 -Type DWord -Force
+        Set-ItemProperty -Path $searchPath -Name "CortanaConsent" -Value 0 -Type DWord -Force
+        Set-ItemProperty -Path $policyPath -Name "DisableSearchBoxSuggestions" -Value 1 -Type DWord -Force
+        Write-Log "-> Bing desativado no Menu Iniciar com sucesso." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desativar pesquisa do Bing no menu iniciar: $_" -Type Warning
+    }
+}
+
+function Disable-Copilot {
+    <#
+    .SYNOPSIS
+        Desativa o Windows Copilot (assistente AI integrado no sistema).
+    #>
+    Write-Log "DESABILITANDO WINDOWS COPILOT" -Type Info -Color Cyan
+    
+    $hkcuCopilot = "HKCU:\Software\Policies\Microsoft\Windows\WindowsCopilot"
+    $hklmCopilot = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsCopilot"
+    $hkcuAdvanced = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    
+    if (!(Test-Path $hkcuCopilot)) { New-Item -Path $hkcuCopilot -Force | Out-Null }
+    if (!(Test-Path $hklmCopilot)) { New-Item -Path $hklmCopilot -Force | Out-Null }
+    
+    try {
+        Set-ItemProperty -Path $hkcuCopilot -Name "TurnOffWindowsCopilot" -Value 1 -Type DWord -Force
+        Set-ItemProperty -Path $hklmCopilot -Name "TurnOffWindowsCopilot" -Value 1 -Type DWord -Force
+        Set-ItemProperty -Path $hkcuAdvanced -Name "ShowCopilotButton" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
+        Write-Log "-> Copilot desabilitado com sucesso." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desabilitar Copilot: $_" -Type Warning
+    }
+}
+
+function Disable-WidgetsAndChat {
+    <#
+    .SYNOPSIS
+        Desativa os Widgets (Noticias e Interesses) e o icone de Chat na Barra de Tarefas.
+    .DESCRIPTION
+        Remove os icones da barra de tarefas e desativa os servicos de feeds de noticias em background,
+        liberando cerca de 200MB a 400MB de RAM (processos WebView2).
+    #>
+    Write-Log "DESABILITANDO WIDGETS E CHAT DA BARRA DE TAREFAS" -Type Info -Color Cyan
+    
+    $dshPath = "HKLM:\SOFTWARE\Policies\Microsoft\Dsh"
+    $advancedPath = "HKCU:\Software\Microsoft\Windows\CurrentVersion\Explorer\Advanced"
+    
+    if (!(Test-Path $dshPath)) { New-Item -Path $dshPath -Force | Out-Null }
+    
+    try {
+        # Desativa feeds e barra de widgets por diretiva
+        Set-ItemProperty -Path $dshPath -Name "AllowNewsAndInterests" -Value 0 -Type DWord -Force
+        
+        # Oculta icones na barra de tarefas para o usuario atual
+        Set-ItemProperty -Path $advancedPath -Name "TaskbarDa" -Value 0 -Type DWord -Force
+        Set-ItemProperty -Path $advancedPath -Name "TaskbarMn" -Value 0 -Type DWord -Force
+        
+        Write-Log "-> Widgets e Chat desativados e removidos da barra de tarefas." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desabilitar Widgets/Chat: $_" -Type Warning
+    }
+}
+
+function Disable-ConsumerExperience {
+    <#
+    .SYNOPSIS
+        Desativa a Experiencia do Consumidor da Microsoft (instalação automatica de jogos/apps).
+    .DESCRIPTION
+        Evita que o Windows baixe silenciosamente aplicativos como Candy Crush, Spotify,
+        Disney+, etc., para novos perfis de usuario.
+    #>
+    Write-Log "DESABILITANDO INSTALACAO AUTOMATICA DE APPS DE CONSUMO (CANDY CRUSH, ETC)" -Type Info -Color Cyan
+    
+    $cloudPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\CloudContent"
+    if (!(Test-Path $cloudPath)) { New-Item -Path $cloudPath -Force | Out-Null }
+    
+    try {
+        Set-ItemProperty -Path $cloudPath -Name "DisableWindowsConsumerFeatures" -Value 1 -Type DWord -Force
+        Write-Log "-> Instalacao automatica de apps de consumo bloqueada." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desativar Experiencia do Consumidor: $_" -Type Warning
+    }
+}
+
