@@ -6,9 +6,10 @@
 function Show-Menu {
     Write-Host "`nSELECIONE O MODO DE EXECUCAO:" -ForegroundColor Cyan
     Write-Host "1. Instalacao Completa (Otimizacao + Softwares + GLPI)" -ForegroundColor White
-    Write-Host "2. Apenas Configuracao do GLPI" -ForegroundColor White
-    Write-Host "3. Apenas Instalacao de Softwares" -ForegroundColor White
-    Write-Host "4. Apenas Otimizacao e Debloat" -ForegroundColor White
+    Write-Host "2. Instalar GLPI (Instalar Pacote + Configurar)" -ForegroundColor White
+    Write-Host "3. Só instalar programas (Sem configurar GLPI)" -ForegroundColor White
+    Write-Host "4. Só reconfigurar GLPI (Apenas ajustar TAG/Servidor)" -ForegroundColor White
+    Write-Host "5. Só Debloat (Privacidade e Otimizacoes)" -ForegroundColor White
     
     $val = Read-Host "`nOpcao (Padrao: 1)"
     if ([string]::IsNullOrWhiteSpace($val)) { return "1" }
@@ -52,7 +53,7 @@ function Invoke-GeminiPostInstall {
     }
 
     # 3. Privacidade & Debloat
-    if ($opcao -eq "1" -or $opcao -eq "4") {
+    if ($opcao -eq "1" -or $opcao -eq "5") {
         try {
             Disable-Telemetry
             Remove-Bloatware
@@ -77,8 +78,17 @@ function Invoke-GeminiPostInstall {
         }
     }
 
+    # 4.1 Instalacao especifica do GLPI Agent (Opcao 2)
+    if ($opcao -eq "2") {
+        try {
+            Install-GlpiAgent
+        } catch {
+            Register-Failure "GLPI Install" "Erro inesperado ao instalar pacote: $_"
+        }
+    }
+
     # 5. Configuracao do GLPI
-    if ($opcao -eq "1" -or $opcao -eq "2") {
+    if ($opcao -eq "1" -or $opcao -eq "2" -or $opcao -eq "4") {
         try {
             Configure-GlpiAgent
         } catch {

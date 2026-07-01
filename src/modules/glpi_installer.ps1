@@ -1,7 +1,49 @@
-# ==========================================
-# MODULE: GLPI Agent Configurator
-# Responsavel por instalar e configurar o agente de inventario GLPI.
-# ==========================================
+function Install-GlpiAgent {
+    <#
+    .SYNOPSIS
+        Instala o pacote do GLPI Agent usando Winget (ou fallback Chocolatey).
+    #>
+    Write-Log "VERIFICANDO INSTALACAO DO GLPI AGENT..." -Type Info -Color Cyan
+    $regPath = "HKLM:\SOFTWARE\GLPI-Agent"
+    
+    if (Test-Path $regPath) {
+        Write-Log "GLPI Agent ja instalado no registro." -Type Success
+        return $true
+    }
+    
+    Write-Log "GLPI Agent nao instalado. Iniciando instalacao..." -Type Info
+    
+    # Tenta via Winget
+    Write-Log "Instalando via Winget..." -Type Info -Color Green
+    $wingetArgs = @("install", "--id", "GLPI-Project.GLPI-Agent", "--source", "winget", "--exact", "--accept-package-agreements", "--accept-source-agreements", "--silent", "--force", "--disable-interactivity")
+    try {
+        & winget $wingetArgs
+        if ($LASTEXITCODE -eq 0) {
+            Write-Log "GLPI Agent instalado com sucesso via Winget." -Type Success
+            return $true
+        }
+    } catch {
+        Write-Log "Erro ao executar Winget: $_" -Type Warning
+    }
+    
+    # Fallback para Chocolatey
+    Write-Log "Winget falhou. Tentando Chocolatey..." -Type Info -Color Magenta
+    if (Install-ChocolateyEngine) {
+        try {
+            & choco install glpi-agent -y --no-progress
+            if ($LASTEXITCODE -eq 0) {
+                Write-Log "GLPI Agent instalado com sucesso via Chocolatey." -Type Success
+                return $true
+            }
+        } catch {
+            Write-Log "Erro ao executar Chocolatey: $_" -Type Warning
+        }
+    }
+    
+    Write-Log "Falha ao instalar o GLPI Agent por todos os meios." -Type Error
+    Register-Failure "GLPI Install" "Falha na instalacao do pacote GLPI Agent."
+    return $false
+}
 
 function Configure-GlpiAgent {
     <#

@@ -14,9 +14,10 @@
     -   O script verificará a conexão com a internet automaticamente.
     -   **Selecione o modo de execução**:
         -   `1`: Instalação Completa (Padrão).
-        -   `2`: Apenas Configuração do GLPI.
-        -   `3`: Apenas Instalação de Softwares.
-        -   `4`: Apenas Otimização e Debloat.
+        -   `2`: Instalar GLPI (Pacote + Configuração).
+        -   `3`: Só Instalar Programas (Sem configurar GLPI).
+        -   `4`: Só Reconfigurar GLPI (Apenas ajustar TAG/Servidor).
+        -   `5`: Só Otimização e Debloat.
     -   Digite a **FILIAL** (ex: MATRIZ).
     -   Digite o **USUÁRIO** (ex: joao.silva).
     -   Confirme a TAG gerada.
