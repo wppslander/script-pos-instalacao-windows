@@ -74,21 +74,27 @@ function Configure-GlpiAgent {
 
     Write-Log "Servidor GLPI: $glpiServer" -Type Info -Color DarkGray
 
-    # 1. COLETA DE DADOS INTERATIVA
-    # Loop ate que o usuario forneca valores validos
-    do {
-        Write-Host "`n--- DADOS DO EQUIPAMENTO ---" -ForegroundColor Yellow
-        $filial = Read-Host "1. Digite a FILIAL (Ex: MATRIZ)"
-        $user = Read-Host "2. Digite o LOGIN SANKHYA (Ex: joao.silva)"
+    # 1. OBTENÇÃO DA TAG
+    $finalTag = $null
+    if (![string]::IsNullOrWhiteSpace($Global:GlpiTag)) {
+        $finalTag = $Global:GlpiTag
+        Write-Log "Usando TAG previamente configurada: $finalTag" -Type Info -Color Cyan
+    } else {
+        # Loop ate que o usuario forneca valores validos se nao foi coletada no inicio
+        do {
+            Write-Host "`n--- DADOS DO EQUIPAMENTO ---" -ForegroundColor Yellow
+            $filial = Read-Host "1. Digite a FILIAL (Ex: MATRIZ)"
+            $user = Read-Host "2. Digite o LOGIN SANKHYA (Ex: joao.silva)"
 
-        # Sanitizacao basica para remover caracteres invalidos de tags
-        if ($filial) { $filial = $filial -replace '[ "&|]', '' }
-        if ($user) { $user = $user -replace '[ "&|]', '' }
-        
-    } while ([string]::IsNullOrWhiteSpace($filial) -or [string]::IsNullOrWhiteSpace($user))
+            # Sanitizacao basica para remover caracteres invalidos de tags
+            if ($filial) { $filial = $filial -replace '[ "&|]', '' }
+            if ($user) { $user = $user -replace '[ "&|]', '' }
+            
+        } while ([string]::IsNullOrWhiteSpace($filial) -or [string]::IsNullOrWhiteSpace($user))
 
-    $finalTag = "$filial-$user"
-    Write-Log "TAG GERADA: $finalTag" -Type Info -Color Cyan
+        $finalTag = "$filial-$user"
+        Write-Log "TAG GERADA: $finalTag" -Type Info -Color Cyan
+    }
     
     # 2. APLICACAO DE CONFIGURACOES (REGISTRY)
     Write-Log "Aplicando configuracoes no Registro..." -Type Info -Color Yellow

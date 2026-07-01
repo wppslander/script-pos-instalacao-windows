@@ -43,6 +43,36 @@ function Invoke-GeminiPostInstall {
     # 1. Menu de Opções
     $opcao = Show-Menu
 
+    # 1.1 Coleta de TAG Antecipada (Opções que envolvem GLPI: 1, 2 ou 4)
+    if ($opcao -eq "1" -or $opcao -eq "2" -or $opcao -eq "4") {
+        $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "credentials.txt"
+        $glpiServer = Get-CredentialValue -Key "GLPI_SERVER" -FilePath $credFile
+        if ([string]::IsNullOrWhiteSpace($glpiServer)) { 
+            $glpiServer = "http://glpi.yourcompany.com/front/inventory.php" 
+        }
+        
+        Write-Host "`n=====================================================================" -ForegroundColor Yellow
+        Write-Host "                  PARAMETRIZACAO DO GLPI AGENT" -ForegroundColor Yellow
+        Write-Host "=====================================================================" -ForegroundColor Yellow
+        Write-Host "Servidor GLPI Destino: $glpiServer" -ForegroundColor Cyan
+        Write-Host "---------------------------------------------------------------------"
+        
+        do {
+            $filial = Read-Host "1. Digite a FILIAL (Ex: MATRIZ)"
+            $user = Read-Host "2. Digite o LOGIN SANKHYA (Ex: joao.silva)"
+
+            # Sanitizacao basica para remover caracteres variaveis nas tags
+            if ($filial) { $filial = $filial -replace '[ "&|]', '' }
+            if ($user) { $user = $user -replace '[ "&|]', '' }
+            
+        } while ([string]::IsNullOrWhiteSpace($filial) -or [string]::IsNullOrWhiteSpace($user))
+
+        $Global:GlpiTag = "$filial-$user"
+        Write-Log "Tag temporaria armazenada: $Global:GlpiTag" -Type Info -Color Cyan
+        Write-Host "Configuracao do GLPI agendada com a TAG: $Global:GlpiTag" -ForegroundColor Green
+        Write-Host "=====================================================================`n"
+    }
+
     # 2. Preparacao do Sistema (System Prep)
     if ($opcao -eq "1" -or $opcao -eq "3") {
         try {
