@@ -89,9 +89,13 @@ function Install-CorporateSoftware {
             Write-Log "-> OK (Instalado)" -Type Info -Color Gray
             $success++
         } else {
-            # Se for navegador, tenta fechar processos ativos para evitar erros de bloqueio
+            # Tenta fechar processos ativos para evitar erros de bloqueio (Arquivo em uso)
             if ($pkg.Id -match "Chrome") { Stop-ProcessIfRunning -ProcessName "chrome" }
             if ($pkg.Id -match "Firefox") { Stop-ProcessIfRunning -ProcessName "firefox" }
+            if ($pkg.Id -match "UniGetUI") { Stop-ProcessIfRunning -ProcessName "unigetui" }
+            if ($pkg.Id -match "AnyDesk") { Stop-ProcessIfRunning -ProcessName "anydesk" }
+            if ($pkg.Id -match "Everything") { Stop-ProcessIfRunning -ProcessName "everything" }
+            if ($pkg.Id -match "Flameshot") { Stop-ProcessIfRunning -ProcessName "flameshot" }
 
             Write-Log "-> Instalando via Winget..." -Type Info -Color Green
             Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Executando Winget..."

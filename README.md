@@ -49,6 +49,7 @@ O projeto está organizado em uma estrutura modular para facilitar a manutençã
 ```
 / (Raiz)
 ├── bootstrap.bat             # Ponto de entrada. Gerencia elevação e inicia o PowerShell.
+├── reconfigurar-glpi.bat     # Reconfigura o Agente GLPI no Windows (sem reinstalar).
 ├── credentials.txt           # Arquivo de configuração (Servidor GLPI, Usuário, Senha).
 ├── software_list.json        # Lista de pacotes para instalação (Winget/MSStore).
 ├── src/

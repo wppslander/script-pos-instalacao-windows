@@ -232,17 +232,22 @@ function Register-AutoUpdateTask {
     
     # 4. Agendar Tarefa (Semanal, System, Run whether user is logged on or not)
     $taskName = "GeminiAutoUpdate"
-    $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destScript`""
-    $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Wednesday -At 12:00
-    $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
     
     try {
+        # Cria os objetos necessários para a tarefa agendada dentro do try para capturar erros de sintaxe/parâmetro
+        $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-WindowStyle Hidden -ExecutionPolicy Bypass -File `"$destScript`""
+        
+        # Usamos o valor explícito do enum DayOfWeek para evitar ambiguidades de string em algumas versões de PS
+        $trigger = New-ScheduledTaskTrigger -Weekly -DaysOfWeek Wednesday -At 12:00
+        
+        $principal = New-ScheduledTaskPrincipal -UserId "SYSTEM" -LogonType ServiceAccount -RunLevel Highest
+
         Unregister-ScheduledTask -TaskName $taskName -Confirm:$false -ErrorAction SilentlyContinue
         Register-ScheduledTask -TaskName $taskName -Action $action -Trigger $trigger -Principal $principal -Force | Out-Null
         Write-Log "Tarefa '$taskName' agendada com sucesso (Toda Quarta @ 12:00)." -Type Success
     } catch {
         $errMsg = $_.Exception.Message
-        Write-Log "Falha ao agendar tarefa: $errMsg" -Type Error
+        Write-Log "Falha ao configurar tarefa agendada: $errMsg" -Type Error
         Register-Failure "AutoUpdate" "Falha no agendamento: $errMsg"
     }
 }
