@@ -8,6 +8,7 @@ function Show-Menu {
     Write-Host "1. Instalacao Completa (Otimizacao + Softwares + GLPI)" -ForegroundColor White
     Write-Host "2. Apenas Configuracao do GLPI" -ForegroundColor White
     Write-Host "3. Apenas Instalacao de Softwares" -ForegroundColor White
+    Write-Host "4. Apenas Otimizacao e Debloat" -ForegroundColor White
     
     $val = Read-Host "`nOpcao (Padrao: 1)"
     if ([string]::IsNullOrWhiteSpace($val)) { return "1" }
@@ -51,7 +52,7 @@ function Invoke-GeminiPostInstall {
     }
 
     # 3. Privacidade & Debloat
-    if ($opcao -eq "1") {
+    if ($opcao -eq "1" -or $opcao -eq "4") {
         try {
             Disable-Telemetry
             Remove-Bloatware

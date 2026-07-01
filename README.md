@@ -16,6 +16,7 @@
         -   `1`: Instalação Completa (Padrão).
         -   `2`: Apenas Configuração do GLPI.
         -   `3`: Apenas Instalação de Softwares.
+        -   `4`: Apenas Otimização e Debloat.
     -   Digite a **FILIAL** (ex: MATRIZ).
     -   Digite o **USUÁRIO** (ex: joao.silva).
     -   Confirme a TAG gerada.
