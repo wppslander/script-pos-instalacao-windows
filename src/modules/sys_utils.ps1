@@ -65,9 +65,9 @@ function Test-InternetConnection {
 function Get-CredentialValue {
     <#
     .SYNOPSIS
-        Extrai valores de um arquivo de configuração (.txt) estilo INI/Key-Value.
+        Extrai valores de um arquivo de configuração (.env) estilo INI/Key-Value.
     .EXAMPLE
-        Get-CredentialValue -Key "GLPI_SERVER" -FilePath "C:\temp\credentials.txt"
+        Get-CredentialValue -Key "GLPI_SERVER" -FilePath "C:\temp\.env"
     #>
     param(
         [string]$Key,

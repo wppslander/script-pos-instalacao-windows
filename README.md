@@ -7,7 +7,7 @@
 ## 🚀 Como Usar
 
 1.  **Baixe** ou **Clone** este repositório na máquina alvo (ou em um Pen Drive).
-2.  **Edite o arquivo `credentials.txt`** (opcional) se precisar alterar o servidor GLPI ou usuário/senha.
+2.  **Copie o arquivo `.env.example` para `.env`** e edite-o (opcional) se precisar alterar o servidor GLPI ou usuário/senha.
 3.  **Clique duas vezes** em `bootstrap.bat`.
 4.  **Confirme** a solicitação do Controle de Conta de Usuário (UAC) para permitir privilégios de Administrador.
 5.  **Siga as instruções na tela**:
@@ -52,7 +52,7 @@ O projeto está organizado em uma estrutura modular para facilitar a manutençã
 / (Raiz)
 ├── bootstrap.bat             # Ponto de entrada. Gerencia elevação e inicia o PowerShell.
 ├── reconfigurar-glpi.bat     # Reconfigura o Agente GLPI no Windows (sem reinstalar).
-├── credentials.txt           # Arquivo de configuração (Servidor GLPI, Usuário, Senha).
+├── .env.example              # Exemplo de arquivo de configuração (Renomear para .env).
 ├── software_list.json        # Lista de pacotes para instalação (Winget/MSStore).
 ├── src/
     ├── main.ps1              # Script orquestrador principal.
@@ -70,8 +70,8 @@ O projeto está organizado em uma estrutura modular para facilitar a manutençã
 
 ## 🛠 Manutenção e Personalização
 
-### Configuração do GLPI (`credentials.txt`)
-O arquivo `credentials.txt` permite alterar o servidor sem mexer no código:
+### Configuração do GLPI (`.env`)
+O arquivo `.env` (copiado do `.env.example`) permite alterar o servidor sem mexer no código:
 ```ini
 GLPI_SERVER=http://glpi.suaempresa.com/front/inventory.php
 GLPI_USER=glpi_user

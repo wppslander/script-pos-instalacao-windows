@@ -20,7 +20,7 @@ if %errorLevel% neq 0 (
 cd /d "%SCRIPT_DIR%"
 
 :: =====================================================================
-:: CONFIGURAÇÃO DE VALORES PADRÃO (FALLBACK CASO CREDENTIALS.TXT NÃO EXISTA)
+:: CONFIGURAÇÃO DE VALORES PADRÃO (FALLBACK CASO .env NÃO EXISTA)
 :: =====================================================================
 SET "GLPI_SERVER=https://glpi.i.digitalsat.com.br/front/inventory.php"
 SET "GLPI_USER=glpi"
@@ -28,10 +28,10 @@ SET "GLPI_PASS=md3F2eUv"
 SET "GLPI_TAG="
 
 :: =====================================================================
-:: CARREGAR CREDENCIAIS DO credentials.txt SE EXISTIR
+:: CARREGAR CREDENCIAIS DO .env SE EXISTIR
 :: =====================================================================
-if exist "credentials.txt" (
-    for /f "usebackq tokens=1* delims==" %%i in ("credentials.txt") do (
+if exist ".env" (
+    for /f "usebackq tokens=1* delims==" %%i in (".env") do (
         if "%%i"=="GLPI_SERVER" set "GLPI_SERVER=%%j"
         if "%%i"=="GLPI_USER" set "GLPI_USER=%%j"
         if "%%i"=="GLPI_PASSWORD" set "GLPI_PASS=%%j"

@@ -7,7 +7,7 @@
 ## 🚀 Quick Start
 
 1.  **Download** or **Clone** this repository to the target machine (or a USB drive).
-2.  **Edit `credentials.txt`** (optional) to set your GLPI server, username, or password.
+2.  **Copy `.env.example` to `.env`** and edit it (optional) to set your GLPI server, username, or password.
 3.  **Double-click** on `bootstrap.bat`.
 4.  **Confirm** the User Account Control (UAC) prompt to allow Administrator privileges.
 5.  **Follow the on-screen prompts**:
@@ -28,7 +28,7 @@ The project is organized into a modular structure to facilitate maintenance and 
 / (Root)
 ├── bootstrap.bat             # Entry point. Handles elevation and launches PowerShell.
 ├── reconfigurar-glpi.bat     # Reconfigures GLPI Agent on Windows (No installation).
-├── credentials.txt           # Configuration file (GLPI Server, User, Password).
+├── .env.example              # Configuration file example (Rename to .env).
 ├── software_list.json        # List of applications to install (JSON format).
 ├── src/
     ├── main.ps1              # Main orchestrator script.
@@ -46,8 +46,8 @@ The project is organized into a modular structure to facilitate maintenance and 
 
 ## 🛠 Maintenance & Customization
 
-### GLPI Configuration (`credentials.txt`)
-The `credentials.txt` file allows changing the server URL without modifying the code:
+### GLPI Configuration (`.env`)
+The `.env` file (copied from `.env.example`) allows changing the server URL without modifying the code:
 ```ini
 GLPI_SERVER=http://glpi.yourcompany.com/front/inventory.php
 GLPI_USER=glpi_user

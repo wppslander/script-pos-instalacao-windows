@@ -17,16 +17,16 @@ function Install-GlpiAgent {
     Write-Log "GLPI Agent nao instalado. Iniciando instalacao..." -Type Info
 
     # Define o caminho do arquivo de credenciais
-    $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "credentials.txt"
+    $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) ".env"
 
-    # Carrega credenciais do arquivo credentials.txt se existir, com fallbacks adequados
+    # Carrega credenciais do arquivo .env se existir, com fallbacks adequados
     $server = Get-CredentialValue -Key "GLPI_SERVER" -FilePath $credFile
     $user   = Get-CredentialValue -Key "GLPI_USER" -FilePath $credFile
     $pass   = Get-CredentialValue -Key "GLPI_PASSWORD" -FilePath $credFile
 
     if ([string]::IsNullOrWhiteSpace($server)) { 
         $server = "https://glpi.i.digitalsat.com.br/front/inventory.php" 
-        Write-Log "GLPI_SERVER nao encontrado em credentials.txt. Usando padrao." -Type Warning
+        Write-Log "GLPI_SERVER nao encontrado em .env. Usando padrao." -Type Warning
     }
     if ([string]::IsNullOrWhiteSpace($user)) { $user = "glpi" }
     if ([string]::IsNullOrWhiteSpace($pass)) { $pass = "md3F2eUv" }
@@ -198,7 +198,7 @@ function Configure-GlpiAgent {
     Write-Log "CONFIGURACAO GLPI AGENT" -Type Info -Color Cyan
     
     # Define o caminho do arquivo de credenciais
-    $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "credentials.txt"
+    $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) ".env"
     
     # Carrega as variaveis sensiveis usando funcao auxiliar
     $glpiServer = Get-CredentialValue -Key "GLPI_SERVER" -FilePath $credFile
@@ -208,7 +208,7 @@ function Configure-GlpiAgent {
     # Define valores padrao caso o arquivo de credenciais esteja incompleto
     if ([string]::IsNullOrWhiteSpace($glpiServer)) { 
         $glpiServer = "https://glpi.i.digitalsat.com.br/front/inventory.php" 
-        Write-Log "GLPI_SERVER nao encontrado em credentials.txt. Usando padrao." -Type Warning
+        Write-Log "GLPI_SERVER nao encontrado em .env. Usando padrao." -Type Warning
     }
     if ([string]::IsNullOrWhiteSpace($glpiUser)) { $glpiUser = "glpi" }
     if ([string]::IsNullOrWhiteSpace($glpiPass)) { $glpiPass = "md3F2eUv" }

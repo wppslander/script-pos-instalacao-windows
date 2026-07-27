@@ -45,10 +45,10 @@ function Invoke-GeminiPostInstall {
 
     # 1.1 Coleta de TAG Antecipada (Opções que envolvem GLPI: 1, 2 ou 4)
     if ($opcao -eq "1" -or $opcao -eq "2" -or $opcao -eq "4") {
-        $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) "credentials.txt"
+        $credFile = Join-Path (Split-Path (Split-Path $PSScriptRoot -Parent) -Parent) ".env"
         $glpiServer = Get-CredentialValue -Key "GLPI_SERVER" -FilePath $credFile
         if ([string]::IsNullOrWhiteSpace($glpiServer)) { 
-            $glpiServer = "http://glpi.yourcompany.com/front/inventory.php" 
+            $glpiServer = "https://glpi.i.digitalsat.com.br/front/inventory.php" 
         }
         
         Write-Host "`n=====================================================================" -ForegroundColor Yellow

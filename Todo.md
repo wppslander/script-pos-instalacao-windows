@@ -3,7 +3,7 @@
 Este documento rastreia ideias de melhorias, refatorações e novas funcionalidades para o **Windows Post-Installation Suite**.
 
 ## 🛡️ Segurança
-- [ ] **Criptografia de Credenciais**: Substituir o `credentials.txt` (texto plano) por um arquivo criptografado (DPAPI) ou `PSCredential` exportado, para evitar expor a senha do GLPI/Proxy.
+- [ ] **Criptografia de Credenciais**: Substituir o `.env` (texto plano) por um arquivo criptografado (DPAPI) ou `PSCredential` exportado, para evitar expor a senha do GLPI/Proxy.
 - [ ] **Assinatura de Code**: Assinar os scripts `.ps1` digitalmente para permitir execução em políticas de `AllSigned` (aumentando a segurança contra modificações maliciosas).
 
 ## 🚀 Novas Funcionalidades
