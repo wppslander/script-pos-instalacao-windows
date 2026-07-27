@@ -157,7 +157,7 @@ function Install-DirectSoftware {
             return $false
         }
     } catch {
-        Write-Log "Erro durante o download ou instalacao direta de $Id: $_" -Type Error
+        Write-Log "Erro durante o download ou instalacao direta de $($Id): $_" -Type Error
         return $false
     }
 }
