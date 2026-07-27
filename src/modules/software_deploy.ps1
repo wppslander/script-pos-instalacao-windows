@@ -79,11 +79,22 @@ function Install-CorporateSoftware {
         
         # Verifica se o software ja esta no sistema para evitar reinstalacao desnecessaria
         $isInstalled = $false
-        try {
-            # winget list retorna 0 se encontrar o pacote exato
-            $null = & winget list --id $pkg.Id --exact --source $pkg.Source 2>&1
-            if ($LASTEXITCODE -eq 0) { $isInstalled = $true }
-        } catch { }
+        if ($pkg.Source -eq "direct") {
+            if ($pkg.CheckPath) {
+                try {
+                    $expandedPath = $ExecutionContext.InvokeCommand.ExpandString($pkg.CheckPath)
+                    if (Test-Path $expandedPath) {
+                        $isInstalled = $true
+                    }
+                } catch { }
+            }
+        } else {
+            try {
+                # winget list retorna 0 se encontrar o pacote exato
+                $null = & winget list --id $pkg.Id --exact --source $pkg.Source 2>&1
+                if ($LASTEXITCODE -eq 0) { $isInstalled = $true }
+            } catch { }
+        }
 
         if ($isInstalled) {
             Write-Log "-> OK (Instalado)" -Type Info -Color Gray
@@ -92,84 +103,135 @@ function Install-CorporateSoftware {
             # Tenta fechar processos ativos para evitar erros de bloqueio (Arquivo em uso)
             if ($pkg.Id -match "Chrome") { Stop-ProcessIfRunning -ProcessName "chrome" }
             if ($pkg.Id -match "Firefox") { Stop-ProcessIfRunning -ProcessName "firefox" }
+            if ($pkg.Id -match "Thunderbird") { Stop-ProcessIfRunning -ProcessName "thunderbird" }
             if ($pkg.Id -match "UniGetUI") { Stop-ProcessIfRunning -ProcessName "unigetui" }
             if ($pkg.Id -match "AnyDesk") { Stop-ProcessIfRunning -ProcessName "anydesk" }
             if ($pkg.Id -match "Everything") { Stop-ProcessIfRunning -ProcessName "everything" }
             if ($pkg.Id -match "Flameshot") { Stop-ProcessIfRunning -ProcessName "flameshot" }
 
-            Write-Log "-> Instalando via Winget..." -Type Info -Color Green
-            Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Executando Winget..."
-            
-            # Monta os argumentos especificos do pacote
-            $cmdArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
-            
-            # Adiciona localidade se especificado no JSON (ex: pt-BR)
-            if ($pkg.Locale) {
-                $cmdArgs += "--locale"
-                $cmdArgs += $pkg.Locale
-            }
-
-            try {
-                # Executa o comando winget
-                & winget $cmdArgs
+            if ($pkg.Source -eq "direct") {
+                Write-Log "-> Instalando via URL Direta..." -Type Info -Color Green
+                Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Baixando e instalando..."
                 
-                if ($LASTEXITCODE -eq 0) {
-                    Write-Log "-> Sucesso (Winget)." -Type Success
+                $directSuccess = Install-DirectSoftware -Url $pkg.Url -Id $pkg.Id -Type $pkg.Type -Args $pkg.InstallArgs
+                if ($directSuccess) {
+                    Write-Log "-> Sucesso (Instalacao Direta)." -Type Success
                     $success++
                 } else {
-                    # Se falhar no Winget, inicia logica de fallback
-                    $wingetFailed = $true
-                    $wingetError = $LASTEXITCODE
+                    $fallbackFailed = $true
                     
-                    # TENTATIVA 1: Fallback removendo o locale (as vezes o locale pt-BR falha no Winget)
-                    if ($pkg.Locale) {
-                        Write-Log "-> Erro com locale. Tentando padrao..." -Type Warning
-                        Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Retry $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Winget (Sem Locale)..."
-                        
-                        $fallbackArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
+                    # TENTATIVA 1: Fallback para Winget
+                    Write-Log "-> Falha na instalacao direta. Tentando fallback via Winget para $($pkg.Id)..." -Type Warning
+                    Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Fallback $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Instalando via Winget..."
+                    
+                    $fallbackArgs = @("install", "--id", $pkg.Id, "--source", "winget", "--exact") + $globalArgs
+                    try {
                         & winget $fallbackArgs
                         if ($LASTEXITCODE -eq 0) {
                             Write-Log "-> Sucesso (Winget Fallback)." -Type Success
                             $success++
-                            $wingetFailed = $false
+                            $fallbackFailed = $false
                         }
-                    }
-
-                    # TENTATIVA 2: FALLBACK PARA CHOCOLATEY (Se houver ID de fallback configurado)
-                    if ($wingetFailed -and $pkg.ChocoId) {
-                        Write-Log "-> Falha no Winget ($wingetError). Tentando Chocolatey: $($pkg.ChocoId)..." -Type Info -Color Magenta
+                    } catch { }
+                    
+                    # TENTATIVA 2: Fallback para Chocolatey (se houver ChocoId)
+                    if ($fallbackFailed -and $pkg.ChocoId) {
+                        Write-Log "-> Falha no Winget. Tentando Chocolatey: $($pkg.ChocoId)..." -Type Info -Color Magenta
                         Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Fallback $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Instalando via Chocolatey..."
                         
-                        # Garante que o motor do Choco esta instalado
                         if (Install-ChocolateyEngine) {
                             try {
-                                # Instala via Chocolatey com flag -y (Yes para tudo)
                                 & choco install $pkg.ChocoId -y --no-progress
                                 if ($LASTEXITCODE -eq 0) {
-                                    Write-Log "-> Sucesso (Chocolatey)." -Type Success
+                                    Write-Log "-> Sucesso (Chocolatey Fallback)." -Type Success
                                     $success++
-                                    $wingetFailed = $false
-                                } else {
-                                    Write-Log "-> Falha tambem no Chocolatey." -Type Warning
+                                    $fallbackFailed = $false
                                 }
-                            } catch {
-                                Write-Log "-> Erro ao executar Chocolatey." -Type Warning
-                            }
+                            } catch { }
                         }
-                    } 
+                    }
                     
-                    # Se todas as tentativas falharem
-                    if ($wingetFailed) {
-                        Write-Log "-> FALHA (Erro: $wingetError) e sem sucesso no fallback." -Type Error
-                        Register-Failure "Install $($pkg.Id)" "Winget: $wingetError"
+                    if ($fallbackFailed) {
+                        Write-Log "-> FALHA na instalacao direta e nos fallbacks (Winget/Chocolatey)." -Type Error
+                        Register-Failure "Install $($pkg.Id)" "Direct/Winget/Choco failed"
                         $fail++
                     }
                 }
-            } catch {
-                # Erro de excecao (ex: winget nao encontrado)
-                Write-Log "-> Erro de execucao: $_" -Type Error
-                Register-Failure "Install $($pkg.Id)" "Exception: $_"
-                $fail++
+            } else {
+                Write-Log "-> Instalando via Winget..." -Type Info -Color Green
+                Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Instalando $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Executando Winget..."
+                
+                # Monta os argumentos especificos do pacote
+                $cmdArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
+                
+                # Adiciona localidade se especificado no JSON (ex: pt-BR)
+                if ($pkg.Locale) {
+                    $cmdArgs += "--locale"
+                    $cmdArgs += $pkg.Locale
+                }
+
+                try {
+                    # Executa o comando winget
+                    & winget $cmdArgs
+                    
+                    if ($LASTEXITCODE -eq 0) {
+                        Write-Log "-> Sucesso (Winget)." -Type Success
+                        $success++
+                    } else {
+                        # Se falhar no Winget, inicia logica de fallback
+                        $wingetFailed = $true
+                        $wingetError = $LASTEXITCODE
+                        
+                        # TENTATIVA 1: Fallback removendo o locale (as vezes o locale pt-BR falha no Winget)
+                        if ($pkg.Locale) {
+                            Write-Log "-> Erro com locale. Tentando padrao..." -Type Warning
+                            Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Retry $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Winget (Sem Locale)..."
+                            
+                            $fallbackArgs = @("install", "--id", $pkg.Id, "--source", $pkg.Source, "--exact") + $globalArgs
+                            & winget $fallbackArgs
+                            if ($LASTEXITCODE -eq 0) {
+                                Write-Log "-> Sucesso (Winget Fallback)." -Type Success
+                                $success++
+                                $wingetFailed = $false
+                            }
+                        }
+
+                        # TENTATIVA 2: FALLBACK PARA CHOCOLATEY (Se houver ID de fallback configurado)
+                        if ($wingetFailed -and $pkg.ChocoId) {
+                            Write-Log "-> Falha no Winget ($wingetError). Tentando Chocolatey: $($pkg.ChocoId)..." -Type Info -Color Magenta
+                            Write-Progress -Id 1 -Activity "Deploy de Software Corporativo" -Status "$progressPrefix Fallback $($pkg.Id)" -PercentComplete $percentComplete -CurrentOperation "Instalando via Chocolatey..."
+                            
+                            # Garante que o motor do Choco esta instalado
+                            if (Install-ChocolateyEngine) {
+                                try {
+                                    # Instala via Chocolatey com flag -y (Yes para tudo)
+                                    & choco install $pkg.ChocoId -y --no-progress
+                                    if ($LASTEXITCODE -eq 0) {
+                                        Write-Log "-> Sucesso (Chocolatey)." -Type Success
+                                        $success++
+                                        $wingetFailed = $false
+                                    } else {
+                                        Write-Log "-> Falha tambem no Chocolatey." -Type Warning
+                                    }
+                                } catch {
+                                    Write-Log "-> Erro ao executar Chocolatey." -Type Warning
+                                }
+                            }
+                        } 
+                        
+                        # Se todas as tentativas falharem
+                        if ($wingetFailed) {
+                            Write-Log "-> FALHA (Erro: $wingetError) e sem sucesso no fallback." -Type Error
+                            Register-Failure "Install $($pkg.Id)" "Winget: $wingetError"
+                            $fail++
+                        }
+                    }
+                } catch {
+                    # Erro de excecao (ex: winget nao encontrado)
+                    Write-Log "-> Erro de execucao: $_" -Type Error
+                    Register-Failure "Install $($pkg.Id)" "Exception: $_"
+                    $fail++
+                }
             }
         }
     }

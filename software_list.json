@@ -25,20 +25,26 @@
   },
   {
     "Id": "Google.Chrome",
-    "Source": "winget",
-    "Locale": "pt-BR",
+    "Source": "direct",
+    "Url": "https://dl.google.com/chrome/install/googlechromestandaloneenterprise64.msi",
+    "Type": "msi",
+    "CheckPath": "$env:ProgramFiles\\Google\\Chrome\\Application\\chrome.exe",
     "ChocoId": "googlechrome"
   },
   {
     "Id": "Mozilla.Firefox",
-    "Source": "winget",
-    "Locale": "pt-BR",
+    "Source": "direct",
+    "Url": "https://download.mozilla.org/?product=firefox-latest-msi-ssl&os=win64&lang=pt-BR",
+    "Type": "msi",
+    "CheckPath": "$env:ProgramFiles\\Mozilla Firefox\\firefox.exe",
     "ChocoId": "firefox"
   },
   {
     "Id": "Mozilla.Thunderbird",
-    "Source": "winget",
-    "Locale": "pt-BR",
+    "Source": "direct",
+    "Url": "https://download.mozilla.org/?product=thunderbird-latest-msi-ssl&os=win64&lang=pt-BR",
+    "Type": "msi",
+    "CheckPath": "$env:ProgramFiles\\Mozilla Thunderbird\\thunderbird.exe",
     "ChocoId": "thunderbird"
   },
   {

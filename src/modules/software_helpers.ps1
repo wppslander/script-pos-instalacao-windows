@@ -82,3 +82,83 @@ function Configure-FlameshotAutoStart {
         Write-Log "-> Flameshot nao encontrado. O auto-start nao foi configurado." -Type Info -Color DarkGray
     }
 }
+
+function Install-DirectSoftware {
+    <#
+    .SYNOPSIS
+        Baixa um instalador de uma URL direta e instala-o silenciosamente.
+    .DESCRIPTION
+        Útil para softwares com pacotes do Winget/MS Store desatualizados ou instáveis.
+        Suporta instaladores do tipo MSI e EXE.
+    #>
+    param (
+        [Parameter(Mandatory=$true)]
+        [string]$Url,
+        [Parameter(Mandatory=$true)]
+        [string]$Id,
+        [Parameter(Mandatory=$true)]
+        [string]$Type,
+        [string]$Args
+    )
+    
+    Write-Log "Iniciando instalacao direta para $Id..." -Type Info -Color Cyan
+    Write-Log "Download URL: $Url" -Type Info -Color DarkGray
+    
+    $tempDir = Join-Path $env:TEMP "DirectInstallers"
+    if (!(Test-Path $tempDir)) {
+        $null = New-Item -ItemType Directory -Path $tempDir -Force
+    }
+    
+    $ext = if ($Type -eq "msi") { "msi" } else { "exe" }
+    $tempFile = Join-Path $tempDir "$Id.$ext"
+    
+    try {
+        # Habilita TLS 1.2 e TLS 1.3
+        [System.Net.ServicePointManager]::SecurityProtocol = [System.Net.ServicePointManager]::SecurityProtocol -bor 3072 -bor 12288
+        
+        # Faz o download do arquivo de instalacao
+        Write-Log "Baixando arquivo temporario em $tempFile..." -Type Info -Color DarkGray
+        Invoke-WebRequest -Uri $Url -OutFile $tempFile -UseBasicParsing -ErrorAction Stop
+        Write-Log "Download concluido com sucesso." -Type Success
+        
+        # Define os argumentos de instalacao silenciosa padrao
+        $installArgs = $Args
+        if ([string]::IsNullOrWhiteSpace($installArgs)) {
+            if ($Type -eq "msi") {
+                $installArgs = "/i `"$tempFile`" /quiet /norestart"
+            } else {
+                $installArgs = "/S"
+            }
+        } else {
+            # Se for MSI, garante o /i do arquivo
+            if ($Type -eq "msi" -and $installArgs -notmatch "/i") {
+                $installArgs = "/i `"$tempFile`" $installArgs"
+            }
+        }
+        
+        Write-Log "Executando instalador silencioso..." -Type Info -Color DarkGray
+        if ($Type -eq "msi") {
+            Write-Log "Comando: msiexec.exe $installArgs" -Type Info -Color DarkGray
+            $process = Start-Process -FilePath "msiexec.exe" -ArgumentList $installArgs -Wait -NoNewWindow -PassThru
+        } else {
+            Write-Log "Comando: $tempFile $installArgs" -Type Info -Color DarkGray
+            $process = Start-Process -FilePath $tempFile -ArgumentList $installArgs -Wait -NoNewWindow -PassThru
+        }
+        
+        # Retornos validos (0: OK, 3010: OK porem necessita reboot)
+        if ($process.ExitCode -eq 0 -or $process.ExitCode -eq 3010) {
+            Write-Log "Instalacao direta de $Id concluida com sucesso (ExitCode: $($process.ExitCode))." -Type Success
+            # Limpa o arquivo temporario
+            Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
+            return $true
+        } else {
+            Write-Log "O instalador retornou codigo de erro: $($process.ExitCode)" -Type Error
+            Remove-Item -Path $tempFile -Force -ErrorAction SilentlyContinue
+            return $false
+        }
+    } catch {
+        Write-Log "Erro durante o download ou instalacao direta de $Id: $_" -Type Error
+        return $false
+    }
+}
+

@@ -304,12 +304,83 @@ function Stop-ProcessIfRunning {
     }
 }
 
+function Ensure-WinGet {
+    <#
+    .SYNOPSIS
+        Verifica se o WinGet está instalado e funcional. Caso contrário, tenta realizar a instalação/reparo automático.
+    #>
+    Write-Log "Verificando se o WinGet esta instalado..." -Type Info -Color DarkGray
+    
+    if (Get-Command "winget" -ErrorAction SilentlyContinue) {
+        Write-Log "-> WinGet ja esta instalado e disponivel." -Type Success
+        return $true
+    }
+    
+    Write-Log "WinGet nao detectado. Verificando conectividade para instalacao..." -Type Warning
+    
+    # Verifica conectividade simples antes de tentar baixar
+    $hasInternet = Test-Connection -ComputerName 8.8.8.8 -Count 1 -Quiet
+    if (-not $hasInternet) {
+        Write-Log "Instalacao do WinGet abortada: Sem conexao com a internet." -Type Error
+        return $false
+    }
+    
+    try {
+        # 1. Habilita o provedor NuGet (necessário para baixar da PSGallery)
+        Write-Log "Instalando provedor NuGet..." -Type Info -Color DarkGray
+        Install-PackageProvider -Name NuGet -Force -ErrorAction Stop | Out-Null
+        
+        # 2. Configura a PSGallery como confiável temporariamente para evitar prompts interativos
+        Write-Log "Configurando PSGallery como confiavel..." -Type Info -Color DarkGray
+        Set-PSRepository -Name "PSGallery" -InstallationPolicy Trusted -ErrorAction SilentlyContinue
+        
+        # 3. Instala o módulo oficial do WinGet se não estiver presente
+        if (-not (Get-Module -ListAvailable -Name Microsoft.WinGet.Client)) {
+            Write-Log "Instalando modulo Microsoft.WinGet.Client..." -Type Info -Color DarkGray
+            Install-Module -Name Microsoft.WinGet.Client -Force -Repository PSGallery -Scope AllUsers -ErrorAction Stop | Out-Null
+        } else {
+            Write-Log "Modulo Microsoft.WinGet.Client ja esta presente." -Type Info -Color DarkGray
+        }
+        
+        # 4. Importa o módulo para garantir que os cmdlets estejam disponíveis
+        Import-Module Microsoft.WinGet.Client -ErrorAction Stop
+        
+        # 5. Executa a reinstalação/reparo do WinGet com todas as dependências
+        try {
+            Write-Log "Instalando/Reparando WinGet para todos os usuarios (isso pode levar alguns minutos)..." -Type Info -Color Cyan
+            Repair-WinGetPackageManager -AllUsers -ErrorAction Stop
+        } catch {
+            Write-Log "Falha ao instalar para todos os usuarios. Tentando instalar para o usuario atual..." -Type Warning
+            Repair-WinGetPackageManager -ErrorAction Stop
+        }
+        
+        # 6. Atualiza a variável de ambiente PATH da sessão atual
+        $windowsAppsPath = Join-Path $env:LOCALAPPDATA "Microsoft\WindowsApps"
+        if ($env:PATH -notlike "*$windowsAppsPath*") {
+            $env:PATH += ";$windowsAppsPath"
+        }
+        
+        # Verifica se passou a funcionar
+        if (Get-Command "winget" -ErrorAction SilentlyContinue) {
+            Write-Log "-> WinGet instalado e configurado com sucesso!" -Type Success
+            return $true
+        } else {
+            throw "O comando 'winget' ainda nao esta disponivel no PATH apos o reparo."
+        }
+    } catch {
+        $errMsg = $_.Exception.Message
+        Write-Log "Falha ao instalar o WinGet: $errMsg" -Type Error
+        Register-Failure "Winget-Install" "Nao foi possivel instalar o WinGet: $errMsg"
+        return $false
+    }
+}
+
 function Test-PreFlightChecks {    <#
     .SYNOPSIS
         Executa verificacoes de seguranca e ambiente antes de iniciar o menu.
     .DESCRIPTION
         1. Verifica se esta rodando como Administrador (Obrigatorio).
-        2. Verifica se o Winget esta disponivel (Alerta).
+        2. Verifica se o Winget esta disponivel e tenta instalar se faltar.
         3. Verifica se ha reinicializacao pendente (Alerta).
     #>
     Write-Header "Pre-Flight Checks"
@@ -323,12 +394,10 @@ function Test-PreFlightChecks {    <#
     }
     Write-Host "[OK] Privilegios de Admin confirmados." -ForegroundColor Green
 
-    # 2. Winget Check
-    if (-not (Get-Command "winget" -ErrorAction SilentlyContinue)) {
-         Register-Failure "Pre-Check" "Winget nao encontrado no PATH."
-         Write-Warning "ALERTA: Winget nao detectado. A instalacao de softwares falhara."
-    } else {
-        Write-Host "[OK] Winget detectado." -ForegroundColor Green
+    # 2. Winget Check & Install
+    $wingetOk = Ensure-WinGet
+    if (-not $wingetOk) {
+        Write-Warning "ALERTA: Winget nao detectado/instalado. A instalacao de softwares falhara."
     }
 
     # 3. Pending Reboot Check

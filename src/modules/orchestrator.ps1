@@ -59,15 +59,17 @@ function Invoke-GeminiPostInstall {
         
         do {
             $filial = Read-Host "1. Digite a FILIAL (Ex: MATRIZ)"
-            $user = Read-Host "2. Digite o LOGIN SANKHYA (Ex: joao.silva)"
+            $setor  = Read-Host "2. Digite o SETOR (Ex: TI)"
+            $nome   = Read-Host "3. Digite o NOME/LOGIN (Ex: joao.silva)"
 
             # Sanitizacao basica para remover caracteres variaveis nas tags
             if ($filial) { $filial = $filial -replace '[ "&|]', '' }
-            if ($user) { $user = $user -replace '[ "&|]', '' }
+            if ($setor)  { $setor  = $setor  -replace '[ "&|]', '' }
+            if ($nome)   { $nome   = $nome   -replace '[ "&|]', '' }
             
-        } while ([string]::IsNullOrWhiteSpace($filial) -or [string]::IsNullOrWhiteSpace($user))
+        } while ([string]::IsNullOrWhiteSpace($filial) -or [string]::IsNullOrWhiteSpace($setor) -or [string]::IsNullOrWhiteSpace($nome))
 
-        $Global:GlpiTag = "$filial-$user"
+        $Global:GlpiTag = "$filial-$setor-$nome"
         Write-Log "Tag temporaria armazenada: $Global:GlpiTag" -Type Info -Color Cyan
         Write-Host "Configuracao do GLPI agendada com a TAG: $Global:GlpiTag" -ForegroundColor Green
         Write-Host "=====================================================================`n"
@@ -91,6 +93,7 @@ function Invoke-GeminiPostInstall {
             Disable-PrintScreenSnipping
             Disable-BingSearch
             Disable-Copilot
+            Disable-WindowsAI
             Disable-WidgetsAndChat
             Disable-ConsumerExperience
         } catch {

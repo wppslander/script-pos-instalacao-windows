@@ -68,13 +68,20 @@ echo =====================================================================
 echo               RECONFIGURACAO DO AGENTE GLPI
 echo =====================================================================
 echo.
-set /p "GLPI_TAG=Por favor, digite a nova TAG (ex: MATRIZ-joao.silva): "
-if "%GLPI_TAG%"=="" (
-    echo [!] ERRO: A tag e obrigatoria. Finalizando.
-    pause
-    exit /b 1
-)
+set /p "GLPI_FILIAL=1. Digite a FILIAL (Ex: MATRIZ): "
+if "%GLPI_FILIAL%"=="" goto AskForTagError
+set /p "GLPI_SETOR=2. Digite o SETOR (Ex: TI): "
+if "%GLPI_SETOR%"=="" goto AskForTagError
+set /p "GLPI_NOME=3. Digite o NOME/LOGIN (Ex: joao.silva): "
+if "%GLPI_NOME%"=="" goto AskForTagError
+
+SET "GLPI_TAG=%GLPI_FILIAL%-%GLPI_SETOR%-%GLPI_NOME%"
 goto RunPowerShell
+
+:AskForTagError
+echo [!] ERRO: Todos os campos sao obrigatorios. Finalizando.
+pause
+exit /b 1
 
 :Usage
 echo.
@@ -121,6 +128,9 @@ if ([string]::IsNullOrEmpty($env:GLPI_TAG)) {
     Write-Error "[ERRO] A variavel GLPI_TAG nao foi definida."
     exit 1
 }
+
+# Sanitização básica para remover espaços e caracteres especiais da TAG herdada
+$env:GLPI_TAG = $env:GLPI_TAG -replace '[ "&|]', ''
 
 Write-Host "[1/4] Atualizando chaves de registro..." -ForegroundColor Cyan
 try {

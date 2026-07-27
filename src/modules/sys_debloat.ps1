@@ -26,7 +26,8 @@ function Disable-Telemetry {
         Set-ItemProperty -Path $telemetryPath -Name "AllowTelemetry" -Value 0 -Type DWord -Force -ErrorAction Stop
         Write-Log "-> Telemetria desativada via Registro." -Type Success
     } catch {
-        Write-Log "-> Falha ao definir AllowTelemetry: $_" -Type Warning
+        # Correção: Isolando $_ para evitar erro de parser
+        Write-Log "-> Falha ao definir AllowTelemetry: $($_)" -Type Warning
     }
 
     # 2. Desabilitar Advertising ID (ID de Publicidade)
@@ -38,29 +39,32 @@ function Disable-Telemetry {
         Set-ItemProperty -Path $advPath -Name "Enabled" -Value 0 -Type DWord -Force -ErrorAction Stop
         Write-Log "-> Advertising ID desativado." -Type Success
     } catch {
-        Write-Log "-> Falha ao desativar Advertising ID: $_" -Type Warning
+        Write-Log "-> Falha ao desativar Advertising ID: $($_)" -Type Warning
     }
 
     # 3. Servicos de Telemetria e Rastreamento
     # DiagTrack: Experiencias de Usuario Conectado e Telemetria (Principal)
     # dmwappushservice: WAP Push Message Routing Service (Telemetria Mobile/Push)
     # WerSvc: Servico de Relatorio de Erros do Windows
-    # SysMain: Superfetch (Opcional, mas reduz uso de disco em ambientes virtualizados/HDD)
     Write-Log "Gerenciando servicos de rastreamento e nao essenciais..." -Type Info
     
     $telemetryServices = @(
         "DiagTrack", 
         "dmwappushservice", 
-        "WerSvc",
-        "SysMain"
+        "WerSvc"
+        # "SysMain" -> REMOVIDO DA LISTA: Desabilitar o Superfetch atrasa 
+        # a indexação e a agilidade da barra de pesquisa do Iniciar.
     )
 
     foreach ($serviceName in $telemetryServices) {
         Disable-ServiceSafe -ServiceName $serviceName
     }
 
-    # 4. Desabilitar Cortana
-    # Remove a assistente pessoal da barra de tarefas e pesquisa
+    # 4. Desabilitar Cortana (DESATIVADO NO SCRIPT)
+    # ALERTA DE INFRA: Em versoes recentes do Win10/11, a chave AllowCortana=0 
+    # destroi o backend do Windows Search para busca local de aplicativos. 
+    # Mantido comentado para historico e prevencao de erros futuros.
+    <#
     Write-Log "Desabilitando Cortana..." -Type Info
     $cortanaPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
     if (!(Test-Path $cortanaPath)) { New-Item -Path $cortanaPath -Force | Out-Null }
@@ -68,8 +72,9 @@ function Disable-Telemetry {
         Set-ItemProperty -Path $cortanaPath -Name "AllowCortana" -Value 0 -Type DWord -Force
         Write-Log "-> Cortana desativada via Policy." -Type Success
     } catch {
-        Write-Log "-> Falha ao desativar Cortana: $_" -Type Warning
+        Write-Log "-> Falha ao desativar Cortana: $($_)" -Type Warning
     }
+    #>
 }
 
 function Remove-Bloatware {
@@ -98,11 +103,7 @@ function Remove-Bloatware {
         "Microsoft.BingWeather",
         "Microsoft.Microsoft3DViewer",
         "Microsoft.People",
-        "Microsoft.WindowsFeedbackHub",
-        "Microsoft.549981C3F5F10",       # Cortana Modern App
-        "Microsoft.BingSports",          # Esportes
-        "Microsoft.BingFinance",         # Dinheiro/Finanças
-        "Microsoft.MixedReality.Portal"  # Portal de Realidade Misturada
+        "Microsoft.WindowsFeedbackHub"
     )
 
     $removedCount = 0
@@ -125,7 +126,7 @@ function Remove-Bloatware {
                 }
             }
         } catch {
-            Write-Log "-> Falha ao remover ${app}: $_" -Type Warning
+            Write-Log "-> Falha ao remover ${app}: $($_)" -Type Warning
         }
     }
 
@@ -169,7 +170,7 @@ function Disable-WindowsSuggestions {
         try {
             Set-ItemProperty -Path $cdmPath -Name $key -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
         } catch {
-            Write-Log "-> Falha ao definir ${key}: $_" -Type Warning
+            Write-Log "-> Falha ao definir ${key}: $($_)" -Type Warning
         }
     }
     
@@ -195,7 +196,7 @@ function Disable-PrintScreenSnipping {
         Set-ItemProperty -Path $keyboardPath -Name "PrintScreenKeyForSnippingEnabled" -Value 0 -Type DWord -Force -ErrorAction Stop
         Write-Log "-> Tecla PrintScreen liberada para softwares de terceiros." -Type Success
     } catch {
-        Write-Log "-> Falha ao configurar PrintScreen: $_" -Type Warning
+        Write-Log "-> Falha ao configurar PrintScreen: $($_)" -Type Warning
     }
 }
 
@@ -221,7 +222,7 @@ function Disable-BingSearch {
         Set-ItemProperty -Path $policyPath -Name "DisableSearchBoxSuggestions" -Value 1 -Type DWord -Force
         Write-Log "-> Bing desativado no Menu Iniciar com sucesso." -Type Success
     } catch {
-        Write-Log "-> Falha ao desativar pesquisa do Bing no menu iniciar: $_" -Type Warning
+        Write-Log "-> Falha ao desativar pesquisa do Bing no menu iniciar: $($_)" -Type Warning
     }
 }
 
@@ -245,7 +246,51 @@ function Disable-Copilot {
         Set-ItemProperty -Path $hkcuAdvanced -Name "ShowCopilotButton" -Value 0 -Type DWord -Force -ErrorAction SilentlyContinue
         Write-Log "-> Copilot desabilitado com sucesso." -Type Success
     } catch {
-        Write-Log "-> Falha ao desabilitar Copilot: $_" -Type Warning
+        Write-Log "-> Falha ao desabilitar Copilot: $($_)" -Type Warning
+    }
+}
+
+function Disable-WindowsAI {
+    <#
+    .SYNOPSIS
+        Desativa recursos adicionais de Inteligencia Artificial (AI) do Windows 11.
+    .DESCRIPTION
+        Desativa o Windows Recall (gravação de tela/snapshots), recursos de analise de dados de AI
+        e o Copilot no navegador Microsoft Edge.
+    #>
+    Write-Log "DESABILITANDO RECURSOS DE AI DO WINDOWS (RECALL, EDGE COPILOT, ETC)" -Type Info -Color Cyan
+    
+    $windowsAIPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\WindowsAI"
+    $edgePolicyPath = "HKLM:\SOFTWARE\Policies\Microsoft\Edge"
+    $searchPolicyPath = "HKLM:\SOFTWARE\Policies\Microsoft\Windows\Windows Search"
+
+    # 1. Desativar Windows Recall (Recall/AI Explorer) e Data Analysis
+    if (!(Test-Path $windowsAIPath)) { New-Item -Path $windowsAIPath -Force | Out-Null }
+    try {
+        Set-ItemProperty -Path $windowsAIPath -Name "AllowRecallEnablement" -Value 0 -Type DWord -Force
+        Set-ItemProperty -Path $windowsAIPath -Name "DisableAIDataAnalysis" -Value 1 -Type DWord -Force
+        Write-Log "-> Windows Recall e Analise de Dados de AI desativados." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desativar Windows Recall/AI: $($_)" -Type Warning
+    }
+
+    # 2. Desativar Copilot no Microsoft Edge
+    if (!(Test-Path $edgePolicyPath)) { New-Item -Path $edgePolicyPath -Force | Out-Null }
+    try {
+        Set-ItemProperty -Path $edgePolicyPath -Name "EdgeCopilotEnabled" -Value 0 -Type DWord -Force
+        Set-ItemProperty -Path $edgePolicyPath -Name "Microsoft365CopilotChatIconEnabled" -Value 0 -Type DWord -Force
+        Write-Log "-> Copilot no Microsoft Edge desativado." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desativar Copilot no Edge: $($_)" -Type Warning
+    }
+
+    # 3. Desativar Search Highlights (Destaques de Pesquisa / Bing AI na barra)
+    if (!(Test-Path $searchPolicyPath)) { New-Item -Path $searchPolicyPath -Force | Out-Null }
+    try {
+        Set-ItemProperty -Path $searchPolicyPath -Name "EnableDynamicContentInWSB" -Value 0 -Type DWord -Force
+        Write-Log "-> Destaques de Pesquisa (Search Highlights) desativados." -Type Success
+    } catch {
+        Write-Log "-> Falha ao desativar Destaques de Pesquisa: $($_)" -Type Warning
     }
 }
 
@@ -274,7 +319,7 @@ function Disable-WidgetsAndChat {
         
         Write-Log "-> Widgets e Chat desativados e removidos da barra de tarefas." -Type Success
     } catch {
-        Write-Log "-> Falha ao desabilitar Widgets/Chat: $_" -Type Warning
+        Write-Log "-> Falha ao desabilitar Widgets/Chat: $($_)" -Type Warning
     }
 }
 
@@ -295,7 +340,6 @@ function Disable-ConsumerExperience {
         Set-ItemProperty -Path $cloudPath -Name "DisableWindowsConsumerFeatures" -Value 1 -Type DWord -Force
         Write-Log "-> Instalacao automatica de apps de consumo bloqueada." -Type Success
     } catch {
-        Write-Log "-> Falha ao desativar Experiencia do Consumidor: $_" -Type Warning
+        Write-Log "-> Falha ao desativar Experiencia do Consumidor: $($_)" -Type Warning
     }
 }
-
